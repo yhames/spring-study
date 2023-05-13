@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Profile;
 
 
 @Import(MemoryConfig.class)
-@SpringBootApplication(scanBasePackages = "hello.itemservice.web")
+@SpringBootApplication(scanBasePackages = "hello.itemservice.web")	// 컨트롤러만 자동등록, 나머지 리포지토리와 서비스는 수동등록
 public class ItemServiceApplication {
 
 	public static void main(String[] args) {
@@ -18,7 +18,7 @@ public class ItemServiceApplication {
 	}
 
 	@Bean
-	@Profile("local")
+	@Profile("local")	// 프로필에 따라 설정정보 다르게 설정 가능(local(내 PC), 운영환경, 테스트실행 등), 지정하지 않을 시 "default" 프로필 설정
 	public TestDataInit testDataInit(ItemRepository itemRepository) {
 		return new TestDataInit(itemRepository);
 	}
