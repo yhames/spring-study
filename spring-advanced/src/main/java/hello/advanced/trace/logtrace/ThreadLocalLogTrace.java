@@ -5,7 +5,9 @@ import hello.advanced.trace.TraceStatus;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 필드에서 TraceId 관리
+ * ThreadLocal 사용 :
+ * 싱글턴 객체는 공유 객체로 사용되기 때문에 전역변수를 사용하면 동시성 문제가 발생한다.
+ * ThreadLocal을 사용하면 각 쓰레드마다 사용하는 저장소를 분리하기 때문에 동시성 문제가 해결된다.
  */
 @Slf4j
 public class ThreadLocalLogTrace implements LogTrace {
