@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <aop:aspectj-autoproxy />
+
+    <bean id="myAspect" class="study.oopinspring.aop004.MyAspect"></bean>
+    <bean id="boy" class="study.oopinspring.aop004.Boy"></bean>
+    <bean id="girl" class="study.oopinspring.aop004.Girl"></bean>
+
+    <aop:config>
+        <aop:aspect ref="myAspect">
+            <aop:before method="before" pointcut="execution(* run())" />
+            <aop:after method="lockDoor" pointcut="execution(* run())" />
+        </aop:aspect>
+    </aop:config>
+
+</beans>
