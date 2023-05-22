@@ -1,13 +1,11 @@
 package com.oopinspring.mvc.controller;
 
+import com.oopinspring.mvc.domain.BoardVO;
 import com.oopinspring.mvc.service.BoardService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/board")
@@ -37,5 +35,14 @@ public class BoardController {
         return "/board/read";
     }
 
+    @GetMapping("/write")
+    public String write() {
+        return "/board/write";
+    }
 
+    @PostMapping("/write")
+    public String write(BoardVO boardVO) {
+        boardService.write(boardVO);
+        return "redirect:/board/list";
+    }
 }

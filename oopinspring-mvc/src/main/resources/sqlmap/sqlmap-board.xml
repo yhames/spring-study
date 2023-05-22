@@ -18,7 +18,7 @@
 
     <insert id="insert" parameterType="boardVO">
         INSERT INTO BOARD (title, content, writer, password, regDate, cnt)
-        VALUES (#{title}, #{content} #{writer}, #{password}, SYSDATE, 0);
+        VALUES (#{title}, #{content}, #{writer}, #{password}, SYSDATE, 0);
         <selectKey keyProperty="seq" resultType="Integer">
             SELECT NVL(MAX(seq), 0) FROM BOARD;
         </selectKey>

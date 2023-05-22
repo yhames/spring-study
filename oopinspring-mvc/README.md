@@ -41,3 +41,15 @@ spring.sql.init.data-locations=classpath:data.sql
 해결되었다..
 
 </details>
+
+
+<details>
+
+<summary>✅ MyBatis Mapper XML 파일이 연동이 안됨</summary>
+
+-> Mapper XML 파일의 default 위치가 다른 곳으로 설정되어있는 것 같아서 `application.properties`에 `mapper-locations` 경로를 지정함.
+```properties
+mybatis.mapper-locations=classpath:sqlmap/**/*.xml
+```
+
+</details>

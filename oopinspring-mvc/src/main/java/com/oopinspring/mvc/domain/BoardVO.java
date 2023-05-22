@@ -7,7 +7,6 @@ import java.sql.Timestamp;
 
 @Alias("boardVO")   // Mybatis 에서 해당 이름("boardVO")으로 클래스 매핑
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BoardVO {
     private int seq;
@@ -19,8 +18,7 @@ public class BoardVO {
     private int cnt;
 
     @Builder
-    public BoardVO(int seq, String title, String content, String writer, int password) {
-        this.seq = seq;
+    public BoardVO(String title, String content, String writer, int password) {
         this.title = title;
         this.content = content;
         this.writer = writer;
