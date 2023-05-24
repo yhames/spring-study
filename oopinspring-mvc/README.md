@@ -2,7 +2,7 @@
 
 <details>
 
-<summary>✅ HSQLDB 연동하는데 BeanCreationException 발생</summary>
+<summary>✅ HSQLDB 연동하는데 `BeanCreationException` 발생</summary>
 
 -> dataSourceScriptDatabaseInitializer bean 생성을 하는데 'schema.sql' 경로에서 schema script를 찾을 수 업어서 오류가 남.
 
@@ -56,7 +56,7 @@ mybatis.mapper-locations=classpath:sqlmap/**/*.xml
 
 <details>
 
-<summary>✅ @ModelAttribute 객체 바인딩 안됨</summary>
+<summary>✅ `@ModelAttribute` 객체 바인딩 안됨</summary>
 
 -> 책 내용을 진행하던 중 다음과 같은 에러가 나왔다.
 ```shell
@@ -400,6 +400,14 @@ public String write(Model model) {
 > https://hyeon9mak.github.io/model-attribute-without-setter/  
 > https://minchul-son.tistory.com/546  
 > https://sedangdang.tistory.com/304  
+
+</details>
+
+<details>
+<summary>✅ `bindingResult.hasErrors()`가 발생하면 `@Valid`는 안보임 </summary>
+
+->
+
 
 </details>
 
