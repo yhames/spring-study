@@ -3,13 +3,19 @@ package com.oopinspring.mvc.controller;
 import com.oopinspring.mvc.domain.BoardVO;
 import com.oopinspring.mvc.service.BoardService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/board")
 @AllArgsConstructor
+@Slf4j
 public class BoardController {
 
     private final BoardService boardService;
@@ -36,13 +42,23 @@ public class BoardController {
     }
 
     @GetMapping("/write")
-    public String write() {
+    public String write(Model model) {
+        model.addAttribute("boardVO", BoardVO.newInstance());
         return "/board/write";
     }
 
     @PostMapping("/write")
-    public String write(BoardVO boardVO) {
+    public String write(HttpServletRequest req, @ModelAttribute BoardVO boardVO, BindingResult bindingResult) {
+        log.info("HttpServletRequest.request : title={}, content={}, writer={}, password={}",
+                req.getParameter("title"), req.getParameter("content"),
+                req.getParameter("writer"), req.getParameter("password"));
+        log.info("@ModelAttribute boardVO : title={}, content={}, writer={}, password={}",
+                boardVO.getTitle(), boardVO.getContent(), boardVO.getWriter(), boardVO.getPassword());
+        if (bindingResult.hasErrors()) {
+            return "/board/write";
+        }
         boardService.write(boardVO);
+        log.info("bindingResult={}", bindingResult.getAllErrors());
         return "redirect:/board/list";
     }
 }
