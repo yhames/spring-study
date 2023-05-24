@@ -19,6 +19,10 @@ public class HomeController {
     @GetMapping("/mvc")
     @ResponseBody
     public String home(Locale locale, Model model) {
-        return "<h1>show</h1>";
+        return "<h1>" +
+                "   <a href='/board/list' style='text-decoration:none; color:black;'>" +
+                "   Board" +
+                "   </a>" +
+                "</h1>";
     }
 }

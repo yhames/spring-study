@@ -46,20 +46,11 @@ public class BoardController {
     @GetMapping("/write")
     public String write(Model model) {
         model.addAttribute("boardVO", new BoardVO());
-//        model.addAttribute("boardVO",  BoardVO.newInstance());
         return "/board/write";
     }
 
     @PostMapping("/write")
-    public String write(HttpServletRequest request, @ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
-        log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
-        log.info("HttpServletRequest.getParameter.content={}", request.getParameter("content"));
-        log.info("HttpServletRequest.getParameter.writer={}", request.getParameter("writer"));
-        log.info("HttpServletRequest.getParameter.password={}", request.getParameter("password"));
-        log.info("write().boardVO.getTitle()={}", boardVO.getTitle());
-        log.info("write().boardVO.getContent()={}", boardVO.getContent());
-        log.info("write().boardVO.getWriter()={}", boardVO.getWriter());
-        log.info("write().boardVO.getPassword()={}", boardVO.getPassword());
+    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return "/board/write";
         }
@@ -75,17 +66,8 @@ public class BoardController {
     }
 
     @PostMapping("/edit/{seq}")
-    public String edit(HttpServletRequest request, @Valid @ModelAttribute BoardVO boardVO, BindingResult bindingResult,
+    public String edit(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
                        int pwd, SessionStatus sessionStatus, Model model) {
-        log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
-        log.info("HttpServletRequest.getParameter.content={}", request.getParameter("content"));
-        log.info("HttpServletRequest.getParameter.writer={}", request.getParameter("writer"));
-        log.info("HttpServletRequest.getParameter.password={}", request.getParameter("password"));
-        log.info("pwd={}", pwd);
-        log.info("edit().boardVO.getTitle()={}", boardVO.getTitle());
-        log.info("edit().boardVO.getContent()={}", boardVO.getContent());
-        log.info("edit().boardVO.getWriter()={}", boardVO.getWriter());
-        log.info("edit().boardVO.getPassword()={}", boardVO.getPassword());
         if (bindingResult.hasErrors()) {
             return "/board/edit";
         }
@@ -97,6 +79,29 @@ public class BoardController {
         boardService.edit(boardVO);
         sessionStatus.setComplete();
         return "redirect:/board/list";
+    }
 
+    @GetMapping("/delete/{seq}")
+    public String delete(@PathVariable int seq, Model model) {
+        model.addAttribute("seq", seq);
+        return "/board/delete";
+    }
+
+    @PostMapping("/delete")
+    public String delete(int seq, int pwd, Model model) {
+        int rowCount;
+        BoardVO boardVO = new BoardVO();
+        boardVO.setSeq(seq);
+        boardVO.setPassword(pwd);
+
+        rowCount = boardService.delete(boardVO);
+
+        if (rowCount == 0) {
+            model.addAttribute("seq", seq);
+            model.addAttribute("msg", "비밀번호가 일치하지 않습니다.");
+            return "/board/delete";
+        }
+
+        return "redirect:/board/list";
     }
 }

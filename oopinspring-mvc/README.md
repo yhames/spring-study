@@ -455,10 +455,30 @@ public class BoardVO {
 <details>
 <summary>✅ `bindingResult.hasErrors()`가 발생하면 `@Valid`는 안보임 </summary>
 
--> 처음에는 그려러니하고 그냥 넘겼는데 위의 `SessionAttributes` 문제에서
-정적팩토리메서드 지우고 `setter`와 `NoArgConstructor` 사용하니 문제가 갑자기 해결되어버려서
-그 이유를 확인하려고 함.
+-> validation을 적용하고 나서 테스트를 해보니, `int`형인 `password`에 문자열을 바인딩 하려고 하면
+`typemismatch` 에러가 발생하는데, 그러면 나머지 `@Valid`를 통해 검증하는 로직들이 실행하지 않는 것을 발견함.
+
+또한 `typemismatch`가 발생하지 않으면 @Valid 또한 문제없이 동작함.
+
+처음에는 @ModelAttribute가 객체를 생성할때 `객체 초기화 → 데이터 바인딩 → 검증` 순서로 진행되기 떄문에 그저 데이터 바인딩과 검증이 순차적으로 실행되는 것인 줄 알았다.
+그래서 데이터 바인딩 이후에 검증을 동작하게 할 수 있는 방법을 찾아보려고 했다.
+
+그런데, 위의 `SessionAttributes` 문제에서 정적팩토리메서드 지우고
+`setter`와 `NoArgConstructor` 사용하니 문제가 갑자기 해결되어버려서
+그 이유를 확인하려고 한다.
 
 
 </details>
 
+
+
+<details>
+
+<summary>✅ 수정/삭제 기능에서 `int`형 매개변수에 대한 validation 필요 </summary>
+
+-> 수정 기능에서 `int pwd`에 대한 validation이 없으니까 문자열이 들어가면 오류메시지가 나오는 것이 아니라
+아예 400 오류 페이지가 나와버림.
+
+
+
+</details>
