@@ -28,8 +28,8 @@
         UPDATE BOARD
         SET title  = #{title},
             content= #{content},
-            writer = #{writer},
-            WHERE seq = #{seq},
+            writer = #{writer}
+            WHERE seq = #{seq}
             AND password = #{password};
     </update>
 

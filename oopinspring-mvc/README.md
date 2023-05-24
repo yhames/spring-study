@@ -403,10 +403,61 @@ public String write(Model model) {
 
 </details>
 
+
+
+
+<details>
+<summary>✅ `@SessionAttributes`를 적용하면 `@ModelAttribute` 객체 바인딩이 전혀 안됨</summary>
+
+-> `@SessionAttributes`를 사용하면 수정 기능 뿐만 아니라 등록 기능도 같이 오류가 나타난다는 것을 발견함. 
+왜 안될까 하고 로그를 하나씩 찍어봤는데 **객체 바인딩이 전혀 안된다**는 것을 확인함
+```java
+public String write(HttpServletRequest request, @ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
+    log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
+    log.info("HttpServletRequest.getParameter.content={}", request.getParameter("content"));
+    log.info("HttpServletRequest.getParameter.writer={}", request.getParameter("writer"));
+    log.info("HttpServletRequest.getParameter.password={}", request.getParameter("password"));
+    log.info("write().boardVO.getTitle()={}", boardVO.getTitle());
+    log.info("write().boardVO.getContent()={}", boardVO.getContent());
+    log.info("write().boardVO.getWriter()={}", boardVO.getWriter());
+    log.info("write().boardVO.getPassword()={}", boardVO.getPassword());
+    // ...
+```
+```shell
+HttpServletRequest.getParameter.title=title
+HttpServletRequest.getParameter.content=content
+HttpServletRequest.getParameter.writer=writer
+HttpServletRequest.getParameter.password=1234
+write().boardVO.getTitle()=null
+write().boardVO.getContent()=null
+write().boardVO.getWriter()=null
+write().boardVO.getPassword()=0
+```
+
+뭔가 내부적으로 `setter` 혹은 `NoArgConstructor`를 사용할지도 모른다는 생각에
+일단 `setter`와 `NoArgConstructor`를 설정함
+
+```java
+// ...
+@Setter
+@NoArgsConstructor
+public class BoardVO {
+
+    private int seq;
+    // ...
+```
+
+그리고 재실행 결과 너무 민망할 정도로 잘됨.  
+심지어 객체 바인딩에서 에러가 발생했을 때 나머지 validation이 동작을 하지 않던 문제도 같이 해결되어버림
+
+</details>
+
 <details>
 <summary>✅ `bindingResult.hasErrors()`가 발생하면 `@Valid`는 안보임 </summary>
 
-->
+-> 처음에는 그려러니하고 그냥 넘겼는데 위의 `SessionAttributes` 문제에서
+정적팩토리메서드 지우고 `setter`와 `NoArgConstructor` 사용하니 문제가 갑자기 해결되어버려서
+그 이유를 확인하려고 함.
 
 
 </details>

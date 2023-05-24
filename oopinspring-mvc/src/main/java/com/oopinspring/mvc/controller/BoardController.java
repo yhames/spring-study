@@ -8,14 +8,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.support.SessionStatus;
 
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 
 @Controller
 @RequestMapping("/board")
 @AllArgsConstructor
 @Slf4j
+@SessionAttributes("boardVO")
 public class BoardController {
 
     private final BoardService boardService;
@@ -43,22 +45,58 @@ public class BoardController {
 
     @GetMapping("/write")
     public String write(Model model) {
-        model.addAttribute("boardVO", BoardVO.newInstance());
+        model.addAttribute("boardVO", new BoardVO());
+//        model.addAttribute("boardVO",  BoardVO.newInstance());
         return "/board/write";
     }
 
     @PostMapping("/write")
-    public String write(HttpServletRequest req, @ModelAttribute BoardVO boardVO, BindingResult bindingResult) {
-        log.info("HttpServletRequest.request : title={}, content={}, writer={}, password={}",
-                req.getParameter("title"), req.getParameter("content"),
-                req.getParameter("writer"), req.getParameter("password"));
-        log.info("@ModelAttribute boardVO : title={}, content={}, writer={}, password={}",
-                boardVO.getTitle(), boardVO.getContent(), boardVO.getWriter(), boardVO.getPassword());
+    public String write(HttpServletRequest request, @ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
+        log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
+        log.info("HttpServletRequest.getParameter.content={}", request.getParameter("content"));
+        log.info("HttpServletRequest.getParameter.writer={}", request.getParameter("writer"));
+        log.info("HttpServletRequest.getParameter.password={}", request.getParameter("password"));
+        log.info("write().boardVO.getTitle()={}", boardVO.getTitle());
+        log.info("write().boardVO.getContent()={}", boardVO.getContent());
+        log.info("write().boardVO.getWriter()={}", boardVO.getWriter());
+        log.info("write().boardVO.getPassword()={}", boardVO.getPassword());
         if (bindingResult.hasErrors()) {
             return "/board/write";
         }
         boardService.write(boardVO);
-        log.info("bindingResult={}", bindingResult.getAllErrors());
         return "redirect:/board/list";
+    }
+
+    @GetMapping("/edit/{seq}")
+    public String edit(@PathVariable int seq, Model model) {
+        BoardVO boardVO = boardService.read(seq);
+        model.addAttribute("boardVO", boardVO);
+        return "/board/edit";
+    }
+
+    @PostMapping("/edit/{seq}")
+    public String edit(HttpServletRequest request, @Valid @ModelAttribute BoardVO boardVO, BindingResult bindingResult,
+                       int pwd, SessionStatus sessionStatus, Model model) {
+        log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
+        log.info("HttpServletRequest.getParameter.content={}", request.getParameter("content"));
+        log.info("HttpServletRequest.getParameter.writer={}", request.getParameter("writer"));
+        log.info("HttpServletRequest.getParameter.password={}", request.getParameter("password"));
+        log.info("pwd={}", pwd);
+        log.info("edit().boardVO.getTitle()={}", boardVO.getTitle());
+        log.info("edit().boardVO.getContent()={}", boardVO.getContent());
+        log.info("edit().boardVO.getWriter()={}", boardVO.getWriter());
+        log.info("edit().boardVO.getPassword()={}", boardVO.getPassword());
+        if (bindingResult.hasErrors()) {
+            return "/board/edit";
+        }
+        if (boardVO.getPassword() != pwd) {
+            model.addAttribute("msg", "비밀번호가 일치하지 않습니다.");
+            return "/board/edit";
+        }
+
+        boardService.edit(boardVO);
+        sessionStatus.setComplete();
+        return "redirect:/board/list";
+
     }
 }

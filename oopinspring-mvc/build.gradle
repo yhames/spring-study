@@ -29,6 +29,9 @@ dependencies {
     // Mybatis
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0'
 
+    // Hibernate Validator, spring boot validation에 hibernate validator 포함됨.
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
     // HSQLDB
     runtimeOnly 'org.hsqldb:hsqldb'
 
