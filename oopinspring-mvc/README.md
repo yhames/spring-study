@@ -609,7 +609,7 @@ Actual   :SUCCESSFUL
 관련내용 다음으로 학습하려고 한다.
 
 > 참고자료  
-> https://developer-joe.tistory.com/226
+> https://developer-joe.tistory.com/226  
 > https://goodgid.github.io/Spring-MVC-SessionAttributes/
 
 </details>
