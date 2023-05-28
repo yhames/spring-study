@@ -407,10 +407,11 @@ public String write(Model model) {
 
 
 <details>
-<summary>✅ `@SessionAttributes`를 적용하면 `@ModelAttribute` 객체 바인딩이 전혀 안됨</summary>
+<summary>✅ `@SessionAttributes`를 적용하면 `@ModelAttribute` 객체 바인딩이 안됨</summary>
 
--> `@SessionAttributes`를 사용하면 수정 기능 뿐만 아니라 등록 기능도 같이 오류가 나타난다는 것을 발견함. 
-왜 안될까 하고 로그를 하나씩 찍어봤는데 **객체 바인딩이 전혀 안된다**는 것을 확인함
+-> `@SessionAttributes`를 사용하면 수정 기능 뿐만 아니라 등록 기능도 같이 오류가 나타난다는 것을 발견함.
+왜 안될까 하고 로그를 하나씩 찍어봤는데 **객체 바인딩이 안된다**는 것을 확인함.
+등록 기능에서 파라미터를 `form` 데이터로 보내면 객체가 바인딩 되지 않고 모두 `null` 혹은 `0`으로 되어있음 
 ```java
 public String write(HttpServletRequest request, @ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
     log.info("HttpServletRequest.getParameter.title={}", request.getParameter("title"));
@@ -434,7 +435,7 @@ write().boardVO.getWriter()=null
 write().boardVO.getPassword()=0
 ```
 
-뭔가 내부적으로 `setter` 혹은 `NoArgConstructor`를 사용할지도 모른다는 생각에
+이전 문제점과 마찬가지로 내부적으로 `NoArgConstructor`를 사용할지도 모른다는 생각에
 일단 `setter`와 `NoArgConstructor`를 설정함
 
 ```java
@@ -447,8 +448,169 @@ public class BoardVO {
     // ...
 ```
 
-그리고 재실행 결과 너무 민망할 정도로 잘됨.  
-심지어 객체 바인딩에서 에러가 발생했을 때 나머지 validation이 동작을 하지 않던 문제도 같이 해결되어버림
+그리고 재실행 결과 역시나 `PartialArgsConstructor`이 아니라 `NoArgsConstructor`이 사용된다는 것을 확인함.
+
+`@SessionAttributes`는 `@ModelAttribute`를 통해 Key 값으로 지정한 이름에 해당하는 `Model` 정보를 자동으로 `Session`에 넣어줌.
+즉, `@SessionAttributes`에 지정된 `Key`(혹은 `Model`)와 동일한 `Key`의 값을 수정하면
+`@ModelAttribute`를 통해 바인딩되고 이를 자동으로 `Session`에 저장함.
+
+<h3>원인 분석</h3>
+
+이전의 코드를 살펴보면, `/write GET 요청`이 오면 `boardVO` 객체를 `Model`에 추가하여 `response`을 보낸다.
+
+```java
+@GetMapping("/write")
+public String write(Model model) {
+    model.addAttribute("boardVO", BoardVO.newInstance());
+    return "/board/write";
+}
+```
+
+그리고 `/write POST 요청`시 `@ModelAttribute`를 통해 `boardVO` 객체를 바인딩한다. 
+
+```java
+@PostMapping("/write")
+public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
+    if (bindingResult.hasErrors()) {
+        return "/board/write";
+    }
+    boardService.write(boardVO);
+    return "redirect:/board/list";
+}
+```
+
+여기까지만 보면 전혀 문제가 없어보이지만 `@SessionAttributes` 유무에 따른 상황을 확인하게 위해
+테스트 케이스를 작성하고 각 객체에 대해 `toString()`을 출력했다.
+
+<h3>`@SessionAttributes`이 없는 경우</h3>
+
+```java
+@Slf4j
+@WebMvcTest(controllers = BoardController.class)
+class BoardControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private BoardService boardService;
+
+    @Test
+    @DisplayName("저장 기능 - SessionAttributes와 ModelAttribute 디버깅")
+    void writeDebug() throws Exception {
+        // given
+        BoardVO boardVO = BoardVO.newInstance();
+        log.info("user.boardVO={}", boardVO.toString());
+
+        MockHttpSession session = new MockHttpSession();
+
+        // when
+        mockMvc.perform(post("/board/write")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .session(session)
+                .sessionAttr("boardVO", boardVO)
+                .characterEncoding("UTF-8")
+                .param("title", "t1")
+                .param("content", "c1")
+                .param("writer", "w1")
+                .param("password", "1234")
+        ).andExpect(status().is3xxRedirection());
+
+        // then
+        assertThat(boardVO.getTitle()).isEqualTo("t1");
+        assertThat(boardVO.getContent()).isEqualTo("c1");
+        assertThat(boardVO.getWriter()).isEqualTo("w1");
+        assertThat(boardVO.getPassword()).isEqualTo(1234);
+    }
+}
+```
+
+```java
+@PostMapping("/write")
+public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
+        HttpServletRequest request) {
+    log.info("session.boardVO={}", request.getSession().getAttribute("boardVO").toString());
+    log.info("controller.boardVO={}", boardVO.toString());
+    if (bindingResult.hasErrors()) {
+        return "/board/write";
+    }
+    boardService.write(boardVO);
+    return "redirect:/board/list";
+}
+```
+
+```shell
+2023-05-28 16:14:58.493  INFO 96851 --- [    Test worker] com.oopinspring.mvc.domain.BoardVO       : static factory method
+2023-05-28 16:14:58.493  INFO 96851 --- [    Test worker] com.oopinspring.mvc.domain.BoardVO       : NoArgsConstructor
+2023-05-28 16:14:58.493  INFO 96851 --- [    Test worker] c.o.mvc.controller.BoardControllerTest   : user.boardVO=com.oopinspring.mvc.domain.BoardVO@13004dd8
+2023-05-28 16:14:58.517  INFO 96851 --- [    Test worker] com.oopinspring.mvc.domain.BoardVO       : PartialArgsConstructor
+2023-05-28 16:14:58.547  INFO 96851 --- [    Test worker] c.o.mvc.controller.BoardController       : session.boardVO=com.oopinspring.mvc.domain.BoardVO@13004dd8
+2023-05-28 16:14:58.547  INFO 96851 --- [    Test worker] c.o.mvc.controller.BoardController       : controller.boardVO=com.oopinspring.mvc.domain.BoardVO@108b121f
+```
+
+`user`와 `session` 객체는 동일한데 `controller`에서 바인딩 된 객체는 전혀 다른 객체인 것을 확인했다.
+이는 `/write POST 요청`시 `@ModelAttribute`가 `PartialArgsConstructor`를 이용하여 새로운 객체를 만들었기 때문이다.
+당연히 `session`에서 사용하는 객체는 바인딩 되지 않아 모두 `null`로 들어가 있다.
+```shell
+expected: "t1"
+ but was: null
+org.opentest4j.AssertionFailedError: 
+expected: "t1"
+ but was: null
+```
+
+<h3>`@SessionAttributes`가 있는 경우</h3>
+
+다음으로 `@SessionAttributes`가 정상적으로 동작할 때 로그를 확인했다.
+정상동작을 위해 `BoardVO` 클래스에 `Setter`를 추가했다.
+
+```shell
+2023-05-28 16:40:52.660  INFO 98597 --- [    Test worker] com.oopinspring.mvc.domain.BoardVO       : static factory method
+2023-05-28 16:40:52.660  INFO 98597 --- [    Test worker] com.oopinspring.mvc.domain.BoardVO       : NoArgsConstructor
+2023-05-28 16:40:52.660  INFO 98597 --- [    Test worker] c.o.mvc.controller.BoardControllerTest   : user.boardVO=com.oopinspring.mvc.domain.BoardVO@2c99c8d
+2023-05-28 16:40:52.712  INFO 98597 --- [    Test worker] c.o.mvc.controller.BoardController       : session.boardVO=com.oopinspring.mvc.domain.BoardVO@2c99c8d
+2023-05-28 16:40:52.712  INFO 98597 --- [    Test worker] c.o.mvc.controller.BoardController       : controller.boardVO=com.oopinspring.mvc.domain.BoardVO@2c99c8d
+```
+
+로그를 출력해보니 이전과는 다르게 모두 같은 객체를 공유하고 있다는 것을 알 수 있다.
+즉, `NoArgsConstructor`이 없더라도 `@SessionAttributes`를 사용하면 `@ModelAttribute`는 `PartialArgsConstructor`를 통해 객체를 생상하는 것이 아니라
+`user`에서 생성하여 `session`에 저장한 그 객체를 사용한다는 것이다. 이 때 `NoArgsConstructor`과 마찬가지로 내부적으로 `setter`메서드를 이용하게 된다.
+
+아직 `setter` 메서드를 작성하지 않았기 때문에 객체의 값이 모두 `null` 혹은 `0`인 상태에서
+`@Valid`를 통해 검증 절차로 진행되어 `return "/board/write";` 구분이 실행되기 때문에 테스트는 실패하게 된다.
+
+이는 처음에 발생했던 문제점과 동일하게 form 데이터로 파라미터를 넘겨도 객체에 바인딩 되지 않고 넘어가는 상황과 동일함.
+
+```shell
+Range for response status value 200 expected:<REDIRECTION> but was:<SUCCESSFUL>
+Expected :REDIRECTION
+Actual   :SUCCESSFUL
+```
+
+<h3>해결방법</h3>
+
+`@SessionAttributes`를 적용하면 바인딩할 객체를 따로 생성하지 않고 `/write GET 요청`시 세션에 추가한 `boardVO` 객체에 파라미터를 바인딩한다.
+
+`PartialArgsConstructor`를 사용하지 못하고 `NoArgsConstructor`를 사용해야하는데
+이 때 객체를 바인딩하기 위해서는 `setter`가 필요하다.
+따라서 객체 바인딩을 위해 `setter` 메서드를 작성하기로 결정했다.
+그리고 정적 팩토리 메서드(`newInstance()`)은 관련 내용을 학습하고 리펙토링하기 위해 일단 남겨놨다. 
+
+
+다음으로 추가적으로 학습해야할 내용은 다음과 같다.
+1. Entity와 DAO, DTO에 대한 명확한 개념정리
+2. DTO 클래스에 setter를 사용해도 되는지  
+2.1. 사용하면 안된다면 setter를 대체할만한 패턴이 있는지
+3. @Data 어노테이션
+
+
+추가로 이번 문제를 해결하면서
+객체 바인딩에서 에러가 발생했을 때 `@Valid`를 통한 validation이 동작을 하지 않던 문제도 같이 해결되어서
+관련내용 다음으로 학습하려고 한다.
+
+> 참고자료  
+> https://developer-joe.tistory.com/226
+> https://goodgid.github.io/Spring-MVC-SessionAttributes/
 
 </details>
 

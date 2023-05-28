@@ -4,7 +4,6 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.type.Alias;
 import org.hibernate.validator.constraints.Length;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
 import javax.validation.constraints.NotEmpty;
 import java.sql.Timestamp;
@@ -13,11 +12,12 @@ import java.sql.Timestamp;
 @Alias("boardVO")   // Mybatis 에서 해당 이름("boardVO")으로 클래스 매핑
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BoardVO {
 
     private int seq;
 
+    @NotEmpty
     @Length(min = 2, max = 5, message = "제목은 2자 이상, 5자 미만으로 입력하세요.")
     private String title;
 
@@ -33,9 +33,9 @@ public class BoardVO {
 
     private int cnt;
 
-//    public static BoardVO newInstance() {
-//        return new BoardVO();
-//    }
+    public static BoardVO newInstance() {
+        return new BoardVO();
+    }
 
     @Builder
     public BoardVO(String title, String content, String writer, int password) {
@@ -44,5 +44,7 @@ public class BoardVO {
         this.writer = writer;
         this.password = password;
         this.cnt = 0;
+        log.info("PartialArgsConstructor title={}, content={}, writer={}, password={}",
+                this.title, this.content, this.writer, this.password);
     }
 }

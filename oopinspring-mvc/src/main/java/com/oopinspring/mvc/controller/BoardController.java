@@ -45,12 +45,13 @@ public class BoardController {
 
     @GetMapping("/write")
     public String write(Model model) {
-        model.addAttribute("boardVO", new BoardVO());
+        model.addAttribute("boardVO", BoardVO.newInstance());
         return "/board/write";
     }
 
     @PostMapping("/write")
-    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
+    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
+                        HttpServletRequest request) {
         if (bindingResult.hasErrors()) {
             return "/board/write";
         }
@@ -90,7 +91,7 @@ public class BoardController {
     @PostMapping("/delete")
     public String delete(int seq, int pwd, Model model) {
         int rowCount;
-        BoardVO boardVO = new BoardVO();
+        BoardVO boardVO = BoardVO.newInstance();
         boardVO.setSeq(seq);
         boardVO.setPassword(pwd);
 
