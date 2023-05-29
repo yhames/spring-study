@@ -4,7 +4,7 @@
 
 <summary>✅ HSQLDB 연동하는데 `BeanCreationException` 발생</summary>
 
--> dataSourceScriptDatabaseInitializer bean 생성을 하는데 'schema.sql' 경로에서 schema script를 찾을 수 업어서 오류가 남.
+→ dataSourceScriptDatabaseInitializer bean 생성을 하는데 'schema.sql' 경로에서 schema script를 찾을 수 업어서 오류가 남.
 
 ```shell
 $ Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Invocation of init method failed; nested exception is java.lang.IllegalStateException: No schema scripts found at location 'schema.sql'
@@ -47,7 +47,7 @@ spring.sql.init.data-locations=classpath:data.sql
 
 <summary>✅ MyBatis Mapper XML 파일이 연동이 안됨</summary>
 
--> Mapper XML 파일의 default 위치가 다른 곳으로 설정되어있는 것 같아서 `application.properties`에 `mapper-locations` 경로를 지정함.
+→ Mapper XML 파일의 default 위치가 다른 곳으로 설정되어있는 것 같아서 `application.properties`에 `mapper-locations` 경로를 지정함.
 ```properties
 mybatis.mapper-locations=classpath:sqlmap/**/*.xml
 ```
@@ -58,7 +58,7 @@ mybatis.mapper-locations=classpath:sqlmap/**/*.xml
 
 <summary>✅ `@ModelAttribute` 객체 바인딩 안됨</summary>
 
--> 책 내용을 진행하던 중 다음과 같은 에러가 나왔다.
+→ 책 내용을 진행하던 중 다음과 같은 에러가 나왔다.
 ```shell
 $ Neither BindingResult nor plain target object for bean name 'boardVO' available as request attribute
 ```
@@ -409,7 +409,7 @@ public String write(Model model) {
 <details>
 <summary>✅ `@SessionAttributes`를 적용하면 `@ModelAttribute` 객체 바인딩이 안됨</summary>
 
--> `@SessionAttributes`를 사용하면 수정 기능 뿐만 아니라 등록 기능도 같이 오류가 나타난다는 것을 발견함.
+→ `@SessionAttributes`를 사용하면 수정 기능 뿐만 아니라 등록 기능도 같이 오류가 나타난다는 것을 발견함.
 왜 안될까 하고 로그를 하나씩 찍어봤는데 **객체 바인딩이 안된다**는 것을 확인함.
 등록 기능에서 파라미터를 `form` 데이터로 보내면 객체가 바인딩 되지 않고 모두 `null` 혹은 `0`으로 되어있음 
 ```java
@@ -615,30 +615,367 @@ Actual   :SUCCESSFUL
 </details>
 
 <details>
-<summary>✅ `bindingResult.hasErrors()`가 발생하면 `@Valid`는 안보임 </summary>
+<summary>✅ `bindingResult.hasErrors()`가 발생하면 `@Valid`는 안보임</summary>
 
--> validation을 적용하고 나서 테스트를 해보니, `int`형인 `password`에 문자열을 바인딩 하려고 하면
+→ validation을 적용하고 나서 테스트를 해보니, `int`형인 `password`에 문자열을 바인딩 하려고 하면
 `typemismatch` 에러가 발생하는데, 그러면 나머지 `@Valid`를 통해 검증하는 로직들이 실행하지 않는 것을 발견함.
+그리고 `password`에서 `typemismatch`가 발생하지 않으면 `@Valid` 또한 문제없이 동작함.
 
-또한 `typemismatch`가 발생하지 않으면 @Valid 또한 문제없이 동작함.
+처음에는 @ModelAttribute가 객체를 생성할때 `객체 초기화 → 데이터 바인딩 → 검증` 순서로 진행되기 떄문에
+그저 데이터 바인딩과 검증이 순차적으로 실행되는 정상적인 프로세스라고 생각하고
+데이터 바인딩 이후에 검증을 동작하게 할 수 있는 방법을 찾아보려고 했다.
 
-처음에는 @ModelAttribute가 객체를 생성할때 `객체 초기화 → 데이터 바인딩 → 검증` 순서로 진행되기 떄문에 그저 데이터 바인딩과 검증이 순차적으로 실행되는 것인 줄 알았다.
-그래서 데이터 바인딩 이후에 검증을 동작하게 할 수 있는 방법을 찾아보려고 했다.
+그런데, 위의 `SessionAttributes` 문제에서 정적팩토리메서드 지우고 `setter`와 `NoArgConstructor` 사용하니
+문제가 갑자기 해결되어버려서 그 이유를 확인하려고 한다.
 
-그런데, 위의 `SessionAttributes` 문제에서 정적팩토리메서드 지우고
-`setter`와 `NoArgConstructor` 사용하니 문제가 갑자기 해결되어버려서
-그 이유를 확인하려고 한다.
+<h3>1. `@SessionAttribute` 사용전</h3>
+
+위에서 `@SessionAttribute`에 대해 기록한 것을 다시 정리하면 다음과 같다.
+
+`@SessionAttribute`를 **적용하지 않으면** `PartialArgsConstructor`를 사용하여 객체를 생성하면서 동시에 데이터를 바인딩 한다.
+
+`@SessionAttribute`를 **적용하면** `NoArgsConstructor`를 사용하여 객체를 생성하고 프로퍼티 접근법(`getter/setter`)을 사용하여 데이터를 바인딩 한다.
+
+디버깅을 하면서 **Data Binding**과 **Validation**이 어떤 흐름으로 이뤄지는지 확인해보자.
+예상되는 시나리오는 다음과 같다.
+
+1. @SessionAttribute 적용 X, BindException 발생 O
+2. @SessionAttribute 적용 X, BindException 발생 X
+3. @SessionAttribute 적용 O, BindException 발생 O
+4. @SessionAttribute 적용 O, BindException 발생 X
+
+<h4>1.1. `@SessionAttribute` 적용 X, `BindException` 발생 O</h4>
+
+`BindException`이 발생하는 경우는 `password`를 문자로 바인딩하는 경우이다.
+간단한 테스트 케이스를 작성했다.
+
+```java
+@Test
+@DisplayName("저장 기능 - BindingResult와 @Valid")
+void write() throws Exception {
+    mockMvc.perform(post("/board/write")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+            .characterEncoding("UTF-8")
+            .param("title", "")
+            .param("content", "")
+            .param("writer", "")
+            .param("password", "asdf"))
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasFieldErrors("boardVO"))
+        .andDo(print());
+```
+
+`POST 요청`이 들어오면 `@ModelAttribute`의 구현체인 `ModelAttributeMethodProcessor`이 호출된다.
+`ModelAttributeMethodProcessor`에서 객체를 생성하기 위해 `resolveArgument()`를 통해
+`createAttribute()`와 `constructAttribute()`가 순차적으로 실행한다.
+
+```java
+ @Override
+ @Nullable
+ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+         NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+
+     Assert.state(mavContainer != null, "ModelAttributeMethodProcessor requires ModelAndViewContainer");
+     Assert.state(binderFactory != null, "ModelAttributeMethodProcessor requires WebDataBinderFactory");
+
+     String name = ModelFactory.getNameForParameter(parameter);
+     ModelAttribute ann = parameter.getParameterAnnotation(ModelAttribute.class);
+     if (ann != null) {
+         mavContainer.setBinding(name, ann.binding());
+     }
+
+     Object attribute = null;
+     BindingResult bindingResult = null;
+
+     if (mavContainer.containsAttribute(name)) {
+         attribute = mavContainer.getModel().get(name);
+     }
+     else {
+         // Create attribute instance
+         try {
+            /**
+             * createAttribute() 메서드 실행
+             */
+             attribute = createAttribute(name, parameter, binderFactory, webRequest);
+         }
+         catch (BindException ex) {
+             if (isBindExceptionRequired(parameter)) {
+                 // No BindingResult parameter -> fail with BindException
+                 throw ex;
+             }
+             // Otherwise, expose null/empty value and associated BindingResult
+             if (parameter.getParameterType() == Optional.class) {
+                 attribute = Optional.empty();
+             }
+             else {
+                 attribute = ex.getTarget();
+             }
+             bindingResult = ex.getBindingResult();
+         }
+     }
+```
+
+```java
+// ModelAttributeMethodProcessor.class
+
+protected Object createAttribute(String attributeName, MethodParameter parameter,
+        WebDataBinderFactory binderFactory, NativeWebRequest webRequest) throws Exception {
+
+    MethodParameter nestedParameter = parameter.nestedIfOptional();
+    Class<?> clazz = nestedParameter.getNestedParameterType();
+
+    Constructor<?> ctor = BeanUtils.getResolvableConstructor(clazz);
+    /**
+     * constructAttribute() 메서드 실행
+     */
+    Object attribute = constructAttribute(ctor, attributeName, parameter, binderFactory, webRequest);   // HERE!
+    if (parameter != nestedParameter) {
+        attribute = Optional.of(attribute);
+    }
+    return attribute;
+}
+```
+
+`constructAttribute()`에서 `PartialArgsConstructor`를 사용하여 객체를 생성 및 바인딩하는 과정에서
+`try...catch...문`을 통해 `TypeMismatchException`이 발생하면
+`bindingFailure` `flag`를 `true`로 할당하고 `BindException`을 던진다.
+
+```java
+protected Object constructAttribute(Constructor<?> ctor, String attributeName, MethodParameter parameter,
+        WebDataBinderFactory binderFactory, NativeWebRequest webRequest) throws Exception {
+
+    /**
+     * 생성자 인수가 0개이면 기본 생성자로 객체 생성
+     */
+    if (ctor.getParameterCount() == 0) {
+        // A single default constructor -> clearly a standard JavaBeans arrangement.
+        return BeanUtils.instantiateClass(ctor);
+    }
+
+    /**
+     * 생성자 인수가 1개 이상이면 적절한 생성자로 객체 생성 및 데이터 바인딩
+     */
+    // A single data class constructor -> resolve constructor arguments from request parameters.
+    String[] paramNames = BeanUtils.getParameterNames(ctor);
+    Class<?>[] paramTypes = ctor.getParameterTypes();
+    Object[] args = new Object[paramTypes.length];
+    WebDataBinder binder = binderFactory.createBinder(webRequest, null, attributeName);
+    String fieldDefaultPrefix = binder.getFieldDefaultPrefix();
+    String fieldMarkerPrefix = binder.getFieldMarkerPrefix();
+    boolean bindingFailure = false;
+    Set<String> failedParams = new HashSet<>(4);
+
+    for (int i = 0; i < paramNames.length; i++) {
+        
+        // ...
+        
+        try {
+            MethodParameter methodParam = new FieldAwareConstructorParameter(ctor, i, paramName);
+            if (value == null && methodParam.isOptional()) {
+                args[i] = (methodParam.getParameterType() == Optional.class ? Optional.empty() : null);
+            }
+            else {
+                args[i] = binder.convertIfNecessary(value, paramType, methodParam);
+            }
+        }
+        /**
+         * TypeMismatchException이 발생하면
+         */
+        catch (TypeMismatchException ex) {  // TypeMismatchException Catch
+            ex.initPropertyName(paramName);
+            args[i] = null;
+            failedParams.add(paramName);
+            binder.getBindingResult().recordFieldValue(paramName, paramType, value);
+            binder.getBindingErrorProcessor().processPropertyAccessException(ex, binder.getBindingResult());
+            /**
+             * bindingFailure을 true로 할당하고,
+             */
+            bindingFailure = true;
+        }
+    }
+
+    /**
+     * bindingFailure가 true이면 
+     */
+    if (bindingFailure) {
+        BindingResult result = binder.getBindingResult();
+        for (int i = 0; i < paramNames.length; i++) {
+            String paramName = paramNames[i];
+            if (!failedParams.contains(paramName)) {
+                Object value = args[i];
+                result.recordFieldValue(paramName, paramTypes[i], value);
+                validateValueIfApplicable(binder, parameter, ctor.getDeclaringClass(), paramName, value);
+            }
+        }
+        if (!parameter.isOptional()) {
+            try {
+                Object target = BeanUtils.instantiateClass(ctor, args);
+                throw new BindException(result) {
+                    @Override
+                    public Object getTarget() {
+                        return target;
+                    }
+                };
+            }
+            catch (BeanInstantiationException ex) {
+                // swallow and proceed without target instance
+            }
+        }
+        /**
+         * BindException을 던진다.
+         */
+        throw new BindException(result);
+    }
+
+    return BeanUtils.instantiateClass(ctor, args);
+}
+```
+
+`BindException`이 발생하면 `resolveArgument()`은 `catch문`으로 분기된다.
+그리고 `getBindingResult`를 통해 `bindingResult`를 할당하고 나서, 이를 바로 모델에 추가한다.
+
+```java
+ @Override
+ @Nullable
+ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+         NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+
+     // ...
+    
+     if (mavContainer.containsAttribute(name)) {
+         attribute = mavContainer.getModel().get(name);
+     }
+     else {
+         // Create attribute instance
+         try {
+             attribute = createAttribute(name, parameter, binderFactory, webRequest);
+         }
+         /**
+          * BindException이 발생하면
+          */
+         catch (BindException ex) {
+          */
+             if (isBindExceptionRequired(parameter)) {
+                 // No BindingResult parameter -> fail with BindException
+                 throw ex;
+             }
+             // Otherwise, expose null/empty value and associated BindingResult
+             if (parameter.getParameterType() == Optional.class) {
+                 attribute = Optional.empty();
+             }
+             else {
+                 attribute = ex.getTarget();
+             }
+             /**
+              * getBindingResult()를 통해 bindingResult를 할당한다.
+              */
+             bindingResult = ex.getBindingResult();
+         }
+     }
+     
+     /**
+      * bindingResult가 이미 할당되어 분기하지 않고,
+      */
+     if (bindingResult == null){
+        //...
+     }     
+
+     /**
+      * bindingResult를 모델에 바로 추가한다. 
+      */
+     // Add resolved attribute and BindingResult at the end of the model
+     Map<String, Object> bindingResultModel = bindingResult.getModel();
+     mavContainer.removeAttributes(bindingResultModel);
+     mavContainer.addAllAttributes(bindingResultModel);
+
+     return attribute;
+ }
+```
+
+위의 `resolveArgument()`의 `if (bindingResult == null)` 분기에서
+나머지 `Validation` 규칙에 따라 `bindingResult`을 가져온다. 
+하지만 이미 `constructAttribute()`에서 `BindException`이 발생하여 `bindingResult`에 값이 할당되었다.
+따라서 더이상 검증 절차를 실행하지 않는다.
+
+<h4>1.2. No BindException (`password`를 숫자로 바인딩)</h4>
+
+`password`를 숫자로 바인딩하면 `PartialArgsConstructor`을 사용하여 객체 생성 및 초기화한다는 것은 같지만,
+`constructAttribute()`에서 `BindException`이 발생하지 않는다는 점이 다르다.
+
+```java
+ @Override
+ @Nullable
+ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+         NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+
+     // ...
+
+     /**
+      * BindException이 발생하지 않아 bindingResult가 null이다
+      */
+     if (bindingResult == null) {
+         // Bean property binding and validation;
+         // skipped in case of binding failure on construction.
+         WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);
+         if (binder.getTarget() != null) {
+             if (!mavContainer.isBindingDisabled(name)) {
+                 bindRequestParameters(binder, webRequest);
+             }
+             /**
+              * 어노테이션으로 설정한 Validation 규칙으로 Model의 Attribute를 검증한다.
+              */
+             validateIfApplicable(binder, parameter);
+             /**
+              * Validation 결과에 따라 BindException을 던지고
+              */
+             if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(binder, parameter)) {
+                 throw new BindException(binder.getBindingResult());
+             }
+         }
+         // Value type adaptation, also covering java.util.Optional
+         if (!parameter.getParameterType().isInstance(attribute)) {
+             attribute = binder.convertIfNecessary(binder.getTarget(), parameter.getParameterType(), parameter);
+         }
+         /**
+          * bindingResult에 검증 결과를 담는다.
+          */
+         bindingResult = binder.getBindingResult();
+     }
+
+     /**
+      * 위의 getBindingResult()로 할당된 bindingResult를 모델에 추가한다.
+      */ 
+     // Add resolved attribute and BindingResult at the end of the model
+     Map<String, Object> bindingResultModel = bindingResult.getModel();
+     mavContainer.removeAttributes(bindingResultModel);
+     mavContainer.addAllAttributes(bindingResultModel);
+
+     return attribute;
+ }
+```
+
+`createAttribute()`에서 `BindException`이 발생하지 않아서 `if (bindingResult == null)` 분기가 실행된다.
+`validateIfApplicable()`을 통해 어노테이션으로 설정한 `Validation` 규칙으로 검증을 실행한다.
+`Validation` 결과에 따라 `BindException`을 던지고 해당 내용을 `bindingResult`에 추가한다.
+마지막으로 `bindingResult`를 모델에 추가하여 반환한다.
+
+정리하자면, `password`는 데이터 바인딩 단계에서 `BindException`가 발생하고,
+나머지는 데이터 바인딩 이후 검증 단계에서 `BindException`이 발생한다.
+
+데이터 바인딩 단계에서 `BindException`이 발생하면 검증 단계를 실행하지 않고
+바로 `bindingResult`를 반환하기 때문에, `password`에 `binding Error`가 생기면
+나머지 `attribute`는 검증을 실행하지 않는 것이다.
+
+<h3>2. `@SessionAttribute` 사용후</h3>
 
 
 </details>
-
-
 
 <details>
 
 <summary>✅ 수정/삭제 기능에서 `int`형 매개변수에 대한 validation 필요 </summary>
 
--> 수정 기능에서 `int pwd`에 대한 validation이 없으니까 문자열이 들어가면 오류메시지가 나오는 것이 아니라
+→ 수정 기능에서 `int pwd`에 대한 validation이 없으니까 문자열이 들어가면 오류메시지가 나오는 것이 아니라
 아예 400 오류 페이지가 나와버림.
 
 

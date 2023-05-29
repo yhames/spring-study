@@ -10,30 +10,20 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+@Slf4j
 @Controller
 @RequestMapping("/board")
 @AllArgsConstructor
-@Slf4j
 @SessionAttributes("boardVO")
 public class BoardController {
 
     private final BoardService boardService;
 
-    /**
-     * 모델을 생성하는 것은 `DispatcherServlet`이다.
-     * `DispatcherServlet`이 생성한 참조변수는 @RequestMapping 어노테이션이 붙은 메서드에서
-     * 인자를 선언하기만 하면 자동으로 받을 수 있다.
-     */
     @GetMapping("/list")
     public String list(Model model) {
         model.addAttribute("boardList", boardService.list());
-        /**
-         * URL 뒷부분 반환하면 ViewResolver 에서 전체 URL 생성
-         * Resolve 설정은 `application.properties`에서 prefix, suffix 설정
-         */
         return "/board/list";
     }
 
@@ -50,8 +40,7 @@ public class BoardController {
     }
 
     @PostMapping("/write")
-    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
-                        HttpServletRequest request) {
+    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return "/board/write";
         }

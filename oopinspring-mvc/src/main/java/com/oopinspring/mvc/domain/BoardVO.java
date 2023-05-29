@@ -17,7 +17,7 @@ public class BoardVO {
 
     private int seq;
 
-    @NotEmpty
+    @NotEmpty(message = "제목을 입력하세요.")
     @Length(min = 2, max = 5, message = "제목은 2자 이상, 5자 미만으로 입력하세요.")
     private String title;
 
@@ -44,7 +44,5 @@ public class BoardVO {
         this.writer = writer;
         this.password = password;
         this.cnt = 0;
-        log.info("PartialArgsConstructor title={}, content={}, writer={}, password={}",
-                this.title, this.content, this.writer, this.password);
     }
 }
