@@ -32,7 +32,7 @@ class BoardControllerTest {
 
     @Test
     @DisplayName("저장 기능 - SessionAttributes와 ModelAttribute")
-    void writeDebug() throws Exception {
+    void writeModelAttributeDebug() throws Exception {
         // given
         BoardVO boardVO = BoardVO.newInstance();
         MockHttpSession session = new MockHttpSession();
@@ -59,7 +59,7 @@ class BoardControllerTest {
 
     @Test
     @DisplayName("저장 기능 - BindingResult와 @Valid")
-    void write() throws Exception {
+    void writeBindExceptionDebug() throws Exception {
         BoardVO boardVO = BoardVO.newInstance();
         MockHttpSession session = new MockHttpSession();
 
@@ -76,35 +76,6 @@ class BoardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("boardVO"))
                 .andDo(print());
-
-        /**
-         * @SessionAttributes 사용 전
-         * - PartialArgsConstructor을 사용하여 객체 생성 및 초기화
-         * - @ModelAttribute는 ModelAttributeMethodProcessor를 구현체로 사용함
-         *
-         * -> 비밀번호를 문자로 하는 경우 :
-         * constructAttribute()의 TypeMismatchException을 catch하는 try...catch...문에서
-         * bindingFailure flag true되고 바로 BindException이 터짐
-         * 이후에 resolveArgument()에서 해당 예외에 대해 getBindingResult를 통해 bindingResult 가져옴
-         * Map<String, Object> bindingResultModel = bindingResult.getModel(); 코드 실행해서
-         * 모델에 bindingResult 넣어줌
-         *
-         * -> 비밀번호를 숫자로 하는 경우 :
-         * constructAttribute()에서 bindingFailure flag false로 넘어감
-         * 그리고 resolveArgument()의 if (bindingResult == null) 구문에서 getBindingResult를 통해
-         * validation 해서 bindingResult 가져옴
-         * Map<String, Object> bindingResultModel = bindingResult.getModel(); 코드 실행해서
-         * 모델에 bindingResult 넣어줌
-         */
-
-        /**
-         * @SessionAttributes 사용 후
-         * - 객체를 미리 생성해서 모델에 전달하고 그 객체를 계속 사용함
-         * - @ModelAttribute는 ModelAttributeMethodProcessor를 구현체로 사용함
-         * -> 객체가 이미 생성되어있고 ModelAttributeMethodProcessor에서는 setter로 데이터 바인딩만 하기때문에
-         * constructAttribute 사용 하지 않아서 resolveArgument에서 validation 한번에 다 실행함
-         *
-         */
     }
 
 }

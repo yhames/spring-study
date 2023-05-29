@@ -628,23 +628,23 @@ Actual   :SUCCESSFUL
 그런데, 위의 `SessionAttributes` 문제에서 정적팩토리메서드 지우고 `setter`와 `NoArgConstructor` 사용하니
 문제가 갑자기 해결되어버려서 그 이유를 확인하려고 한다.
 
-<h3>1. `@SessionAttribute` 사용전</h3>
+<h3>1. `@SessionAttributes` 사용전</h3>
 
-위에서 `@SessionAttribute`에 대해 기록한 것을 다시 정리하면 다음과 같다.
+위에서 `@SessionAttributes`에 대해 기록한 것을 다시 정리하면 다음과 같다.
 
-`@SessionAttribute`를 **적용하지 않으면** `PartialArgsConstructor`를 사용하여 객체를 생성하면서 동시에 데이터를 바인딩 한다.
+`@SessionAttributes`를 **적용하지 않으면** `PartialArgsConstructor`를 사용하여 객체를 생성하면서 동시에 데이터를 바인딩 한다.
 
-`@SessionAttribute`를 **적용하면** `NoArgsConstructor`를 사용하여 객체를 생성하고 프로퍼티 접근법(`getter/setter`)을 사용하여 데이터를 바인딩 한다.
+`@SessionAttributes`를 **적용하면** `NoArgsConstructor`를 사용하여 객체를 생성하고 프로퍼티 접근법(`getter/setter`)을 사용하여 데이터를 바인딩 한다.
 
 디버깅을 하면서 **Data Binding**과 **Validation**이 어떤 흐름으로 이뤄지는지 확인해보자.
 예상되는 시나리오는 다음과 같다.
 
-1. @SessionAttribute 적용 X, BindException 발생 O
-2. @SessionAttribute 적용 X, BindException 발생 X
-3. @SessionAttribute 적용 O, BindException 발생 O
-4. @SessionAttribute 적용 O, BindException 발생 X
+1. @SessionAttributes 적용 X, BindException 발생 O
+2. @SessionAttributes 적용 X, BindException 발생 X
+3. @SessionAttributes 적용 O, BindException 발생 O
+4. @SessionAttributes 적용 O, BindException 발생 X
 
-<h4>1.1. `@SessionAttribute` 적용 X, `BindException` 발생 O</h4>
+<h4>1.1. `@SessionAttributes` 적용 X, `BindException` 발생 O</h4>
 
 `BindException`이 발생하는 경우는 `password`를 문자로 바인딩하는 경우이다.
 간단한 테스트 케이스를 작성했다.
@@ -966,7 +966,74 @@ protected Object constructAttribute(Constructor<?> ctor, String attributeName, M
 바로 `bindingResult`를 반환하기 때문에, `password`에 `binding Error`가 생기면
 나머지 `attribute`는 검증을 실행하지 않는 것이다.
 
-<h3>2. `@SessionAttribute` 사용후</h3>
+<h3>2. `@SessionAttributes` 사용후</h3>
+
+`@SessionAttributes`를 사용하면서 setter 메서드도 같이 추가했다.
+
+`@SessionAttributes`를 사용하게 되면 `ModelAttributeMethodProcessor`가 호출되는 시점에
+이미 `boardVO` 객체가 모델에 저장되어 있으므로 `resolveArgument()`에서 `createAttribute()`를 실행하지 않는다.
+따라서 모든 `Binding`에 대한 `Validation`은 하단의 `if (bindingResult == null)` 분기에서 검사한다.
+
+```java
+@Override
+@Nullable
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+
+    // ...
+    Object attribute = null;
+    BindingResult bindingResult = null;
+
+    /**
+     * mavContainer에 attribute를 이미 가지고 있으므로 else 분기가 실행되지 않는다.
+     */
+    if (mavContainer.containsAttribute(name)) {
+        attribute = mavContainer.getModel().get(name);
+    }
+    else {
+        // Create attribute instance
+        try {
+            /**
+             * createAttribute와 constructAttribute가 실행되지 않는다.
+             */
+            attribute = createAttribute(name, parameter, binderFactory, webRequest);
+        }
+        // ...
+        
+    /**
+     * 모든 Binding에 대한 Validation은 여기서 이뤄진다.
+     */
+    if (bindingResult == null) {
+        // Bean property binding and validation;
+        // skipped in case of binding failure on construction.
+        WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name);
+        if (binder.getTarget() != null) {
+            if (!mavContainer.isBindingDisabled(name)) {
+                bindRequestParameters(binder, webRequest);
+            }
+            validateIfApplicable(binder, parameter);
+            if (binder.getBindingResult().hasErrors() && isBindExceptionRequired(binder, parameter)) {
+                throw new BindException(binder.getBindingResult());
+            }
+        }
+        // Value type adaptation, also covering java.util.Optional
+        if (!parameter.getParameterType().isInstance(attribute)) {
+            attribute = binder.convertIfNecessary(binder.getTarget(), parameter.getParameterType(), parameter);
+        }
+        bindingResult = binder.getBindingResult();
+    }
+
+    // Add resolved attribute and BindingResult at the end of the model
+    Map<String, Object> bindingResultModel = bindingResult.getModel();
+    mavContainer.removeAttributes(bindingResultModel);
+    mavContainer.addAllAttributes(bindingResultModel);
+
+    return attribute;
+}
+```
+
+가장 하단의 `if (bindingResult == null)` 분기점에서 모든 binding에 대해 검증하기 때문에
+`Data Binding`에서 발생하는 `BindException`과 `Validation`을 통해 발생하는 `BindException`이 한번에 같이 나오게 되는 것이다.
 
 
 </details>
