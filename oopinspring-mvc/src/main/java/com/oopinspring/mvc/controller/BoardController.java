@@ -57,7 +57,7 @@ public class BoardController {
 
     @PostMapping("/edit/{seq}")
     public String edit(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
-                       int pwd, SessionStatus sessionStatus, Model model) {
+                       @RequestParam int pwd, SessionStatus sessionStatus, Model model) {
         if (bindingResult.hasErrors()) {
             return "/board/edit";
         }

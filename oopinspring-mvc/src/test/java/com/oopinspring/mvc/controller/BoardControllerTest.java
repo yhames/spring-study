@@ -9,16 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 @WebMvcTest(controllers = BoardController.class)
@@ -31,7 +29,7 @@ class BoardControllerTest {
     private BoardService boardService;
 
     @Test
-    @DisplayName("저장 기능 - SessionAttributes와 ModelAttribute")
+    @DisplayName("write 기능 - @SessionAttributes와 @ModelAttribute")
     void writeModelAttributeDebug() throws Exception {
         // given
         BoardVO boardVO = BoardVO.newInstance();
@@ -58,7 +56,7 @@ class BoardControllerTest {
     }
 
     @Test
-    @DisplayName("저장 기능 - BindingResult와 @Valid")
+    @DisplayName("write 기능 - BindingResult와 @Valid")
     void writeBindExceptionDebug() throws Exception {
         BoardVO boardVO = BoardVO.newInstance();
         MockHttpSession session = new MockHttpSession();
@@ -77,5 +75,4 @@ class BoardControllerTest {
                 .andExpect(model().attributeHasFieldErrors("boardVO"))
                 .andDo(print());
     }
-
 }
