@@ -1045,6 +1045,209 @@ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAn
 → 수정 기능에서 `int pwd`에 대한 validation이 없으니까 문자열이 들어가면 오류메시지가 나오는 것이 아니라
 아예 400 오류 페이지가 나와버림.
 
+<h3>원인분석</h3>
+
+일단 어디서 예외가 발생하는지 확인하기 위해 테스트 코드를 작성해서 디버기을 해봤다.
+여기서는 `Controller` 뿐만 아니라 `Service`와 `Dao`도 필요해서 통합테스트를 위해 새로운 테스트 클래스를 만들었다.
+
+```java
+@Slf4j
+@SpringBootTest
+@AutoConfigureMockMvc
+class RequestParamTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    private BoardService boardService;
+
+    @Test
+    @DisplayName("edit - @RequestParam")
+    void editRequestParam() throws Exception {
+        int seq = 1;
+        BoardVO boardVO = boardService.read(seq);
+        MockHttpSession session = new MockHttpSession();
+
+        mockMvc.perform(post("/board/edit/" + seq)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                        .characterEncoding("UTF-8")
+                        .session(session)
+                        .sessionAttr("boardVO", boardVO)
+                        .param("title", "t2")
+                        .param("content", "c2")
+                        .param("writer", "w2")
+                        .param("pwd", "asdf"))  // MethodArgumentTypeMismatchException
+                .andExpect(status().isBadRequest()) // 400
+                .andExpect(result -> Assertions.assertThat(result.getResolvedException())
+                        .isInstanceOf(MethodArgumentTypeMismatchException.class))
+                .andDo(print());
+```
+
+먼저 `@RequestParam`은 `InvocableHandlerMethod`의 `getMethodArgumentValues()` 메서드에서 파라미터 순회하면서
+`AbstractNamedValueMethodArgumentResolver`의 `resolveArgument()` 메서드를 호출하여 파라미터를 처리한다.
+```java
+protected Object[] getMethodArgumentValues(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
+        Object... providedArgs) throws Exception {
+
+        // ...
+        
+        try {
+            /**
+             * 파라마터를 순회하면서 resolveArgument 메서드 호출
+             */
+            args[i] = this.resolvers.resolveArgument(parameter, mavContainer, request, this.dataBinderFactory);
+        }
+        catch (Exception ex) {
+            // Leave stack trace for later, exception may actually be resolved and handled...
+            if (logger.isDebugEnabled()) {
+                String exMsg = ex.getMessage();
+                if (exMsg != null && !exMsg.contains(parameter.getExecutable().toGenericString())) {
+                    logger.debug(formatArgumentError(parameter, exMsg));
+                }
+            }
+            throw ex;
+        }
+    }
+    return args;
+}
+```
+```java
+@Override
+@Nullable
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+
+    NamedValueInfo namedValueInfo = getNamedValueInfo(parameter);
+    MethodParameter nestedParameter = parameter.nestedIfOptional();
+
+    Object resolvedName = resolveEmbeddedValuesAndExpressions(namedValueInfo.name);
+    if (resolvedName == null) {
+        throw new IllegalArgumentException(
+                "Specified name must not resolve to null: [" + namedValueInfo.name + "]");
+    }
+
+    /**
+     * resolveName를 호출하여 @RequestParam의 name으로 값을 매핑 
+     */
+    Object arg = resolveName(resolvedName.toString(), nestedParameter, webRequest);
+    
+    // ...
+```
+
+`resolveArgument()`는 `RequestParamMethodArgumentResolver`의 `resolveName()` 메서드를 호출하여 `@RequestParam`의 `name`과 매핑되는 파라미터 값을 가져오고
+
+```java
+@Override
+@Nullable
+protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest request) throws Exception {
+    HttpServletRequest servletRequest = request.getNativeRequest(HttpServletRequest.class);
+
+    // ...
+        
+    if (arg == null) {
+        /**
+         * @RequestParam의 name과 매핑되는 파라미터의 값 가져옴 
+         */
+        String[] paramValues = request.getParameterValues(name);
+        if (paramValues != null) {
+            arg = (paramValues.length == 1 ? paramValues[0] : paramValues);
+        }
+    }
+    return arg;
+}
+```
+
+`TypeConverter`의 `convertIfNecessary()`를 호출하여,
+*문자열로 입력된 파라미터 값*을 *`@RequestParam`의 변수 타입*으로 변환한다.
+
+```java
+@Override
+@Nullable
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+  
+    // ...
+        
+    if (binderFactory != null) {
+        WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
+        try {
+            /**
+             * convertIfNecessary를 호출하여 파라미터 값을 @RequestParam 변수의 타입으로 변환
+             */ 
+            arg = binder.convertIfNecessary(arg, parameter.getParameterType(), parameter);
+        }
+        catch (ConversionNotSupportedException ex) {
+            throw new MethodArgumentConversionNotSupportedException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+        }
+        catch (TypeMismatchException ex) {
+            throw new MethodArgumentTypeMismatchException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+        }
+        
+        // ...
+```
+
+`convertIfNecessary()`의 주석을 보면,
+변환 실패 시 `TypeMismatchException`을 던진다고 명시되어있다.
+
+```java
+// TypeConverter
+
+@Nullable
+<T> T convertIfNecessary(@Nullable Object value, @Nullable Class<T> requiredType,
+        @Nullable MethodParameter methodParam) throws TypeMismatchException;
+/**
+ * Convert the value to the required type (if necessary from a String).
+ * <p>Conversions from String to any type will typically use the {@code setAsText}
+ * method of the PropertyEditor class, or a Spring Converter in a ConversionService.
+ * @param value the value to convert
+ * @param requiredType the type we must convert to
+ * (or {@code null} if not known, for example in case of a collection element)
+ * @param field the reflective field that is the target of the conversion
+ * (for analysis of generic types; may be {@code null})
+ * @return the new value, possibly the result of type conversion
+ * @throws TypeMismatchException if type conversion failed  -> 변환 실패시 TypeMismatchException를 던진다
+ * @see java.beans.PropertyEditor#setAsText(String)
+ * @see java.beans.PropertyEditor#getValue()
+ * @see org.springframework.core.convert.ConversionService
+ * @see org.springframework.core.convert.converter.Converter
+ */
+```
+
+`resolveArgument()`에서 `TypeMismatchException`을 받으면 `MethodArgumentTypeMismatchException`을 던진다.
+
+```java
+@Override
+@Nullable
+public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+  
+    // ...
+        
+    if (binderFactory != null) {
+        WebDataBinder binder = binderFactory.createBinder(webRequest, null, namedValueInfo.name);
+        try {
+            arg = binder.convertIfNecessary(arg, parameter.getParameterType(), parameter);
+        }
+        catch (ConversionNotSupportedException ex) {
+            throw new MethodArgumentConversionNotSupportedException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+        }
+        catch (TypeMismatchException ex) {
+            /**
+             * TypeMismatchException이 발생하면 MethodArgumentTypeMismatchException를 던진다
+             */ 
+            throw new MethodArgumentTypeMismatchException(arg, ex.getRequiredType(),
+                    namedValueInfo.name, parameter, ex.getCause());
+        }
+        
+        // ...
+```
+
+<h3>해결방법</h3>
+
 
 
 </details>
