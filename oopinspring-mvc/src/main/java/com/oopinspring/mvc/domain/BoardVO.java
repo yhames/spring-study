@@ -37,6 +37,12 @@ public class BoardVO {
         return new BoardVO();
     }
 
+    public void updateBoardEdit(BoardEdit boardEdit) {
+        this.title = boardEdit.getTitle();
+        this.content = boardEdit.getContent();
+        this.writer = boardEdit.getWriter();
+    }
+
     @Builder
     public BoardVO(String title, String content, String writer, int password) {
         this.title = title;

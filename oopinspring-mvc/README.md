@@ -1248,6 +1248,59 @@ public final Object resolveArgument(MethodParameter parameter, @Nullable ModelAn
 
 <h3>해결방법</h3>
 
+1. `@RequestParam`에 대한 `Validation`은 `hibernate-validator`를 클래스 레벨에 사용해서 간단한 유효성 검사를 할 수 있다.   
+→ 내가 못찾은 것인지는 모르겠지만, `Type Convert` 과정 전에 검증하는 것은 아닌 것 같다.
 
+2. 아니면 `ExceptionController`를 만들어서 `TypeMismatchException`을 `handle`하는 방법도 있다.
+→ 해당 `TypeMismatchException`이 발생하면 해당 예외를 일괄적으로 처리해줘야하는데,
+   1. `@ReuqestParam`을 `pwd`에만 사용하는게 아님. 일괄적으로 처리했다가 다른 부분에서 문제생기면 못찾음.
+   2. 내부적으로는 `pwd`라고 해도 해당 에외는 `password`라는 필드에서 발생하는 것으로 보는게 사용자 입장에서 맞는 것 같음.
+   3. `ExceptionController`에서 `Error Message`를 담아 보내면 아예 다른 페이지로 넘어가야함.
+
+3. 따라서 `@RequestParam int pwd`을 사용하지 않고, `BoardEdit`(`edit` 기능을 위한 `DTO`)를 새로 만들어서
+`@ModelAttribute`와 `BindingResult`를 사용하는 방법을 택했다.
+
+
+```java
+ @GetMapping("/edit/{seq}")
+ public String edit(@PathVariable int seq, Model model) {
+     BoardVO boardVO = boardService.read(seq);
+     model.addAttribute("boardEdit", new BoardEdit(boardVO));
+     return "/board/edit";
+ }
+
+ @PostMapping("/edit/{seq}")
+ public String edit(@ModelAttribute @Valid BoardEdit boardEdit, BindingResult bindingResult,
+                    SessionStatus sessionStatus) {
+     BoardVO boardVO = boardService.read(boardEdit.getSeq());
+     if (bindingResult.hasErrors()) {
+         return "/board/edit";
+     }
+
+     if (boardVO.getPassword() != boardEdit.getPassword()) {
+         /**
+          * 비밀번호가 틀린 경우를 FieldError로 추가함
+          */
+         bindingResult.addError(new FieldError("boardEdit", "password", "비밀번호가 일치하지 않습니다."));
+         return "/board/edit";
+     }
+
+     boardVO.updateBoardEdit(boardEdit);
+
+     boardService.edit(boardVO);
+     sessionStatus.setComplete();
+     return "redirect:/board/list";
+ }
+```
+
+여전히 문제라고 생각되는 부분이 많이 보이고,
+문제가 있음에도 불구하고 내가 캐치하지 못하는 부분도 많겠지만  
+일단 예제를 진행하면서 내가 공부할 수 있는 부분은 다 했다고 판단되서
+다음으로 넘어가려고한다.
+
+앞으로 학습이 누적되면 해당 예제에서 리펙토링을 추가로 진행할 것이다.
+
+> 참고자료
+> https://recordsoflife.tistory.com/369
 
 </details>

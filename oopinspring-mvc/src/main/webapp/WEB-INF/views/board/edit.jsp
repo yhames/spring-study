@@ -11,7 +11,7 @@
     <title>Title</title>
 </head>
 <body>
-<form:form modelAttribute="boardVO" method="post">
+<form:form modelAttribute="boardEdit" method="post">
     <table border="1">
         <tr>
             <th><form:label path="title">제목</form:label></th>
@@ -29,11 +29,15 @@
                 <form:errors path="writer"/></td>
         </tr>
         <tr>
-            <th><label for="password">비밀번호</label></th>
-            <td>
-                <input type="password" id="pwd" name="pwd"/>
-                    ${msg}
-            </td>
+<%--            <th><label for="password">비밀번호</label></th>--%>
+<%--            <td>--%>
+<%--                <input type="password" id="pwd" name="pwd"/>--%>
+<%--                    ${msg}--%>
+<%--            </td>--%>
+            <th><form:label path="password">비밀번호</form:label></th>
+            <td><form:input path="password"/>
+                <form:errors path="password"/>
+                    ${msg}</td>
         </tr>
     </table>
     <div>

@@ -1,5 +1,6 @@
 package com.oopinspring.mvc.controller;
 
+import com.oopinspring.mvc.domain.BoardEdit;
 import com.oopinspring.mvc.domain.BoardVO;
 import com.oopinspring.mvc.service.BoardService;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 
@@ -16,7 +18,7 @@ import javax.validation.Valid;
 @Controller
 @RequestMapping("/board")
 @AllArgsConstructor
-@SessionAttributes("boardVO")
+@SessionAttributes("boardEdit")
 public class BoardController {
 
     private final BoardService boardService;
@@ -51,20 +53,24 @@ public class BoardController {
     @GetMapping("/edit/{seq}")
     public String edit(@PathVariable int seq, Model model) {
         BoardVO boardVO = boardService.read(seq);
-        model.addAttribute("boardVO", boardVO);
+        model.addAttribute("boardEdit", new BoardEdit(boardVO));
         return "/board/edit";
     }
 
     @PostMapping("/edit/{seq}")
-    public String edit(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
-                       @RequestParam int pwd, SessionStatus sessionStatus, Model model) {
+    public String edit(@ModelAttribute @Valid BoardEdit boardEdit, BindingResult bindingResult,
+                       SessionStatus sessionStatus) {
+        BoardVO boardVO = boardService.read(boardEdit.getSeq());
         if (bindingResult.hasErrors()) {
             return "/board/edit";
         }
-        if (boardVO.getPassword() != pwd) {
-            model.addAttribute("msg", "비밀번호가 일치하지 않습니다.");
+
+        if (boardVO.getPassword() != boardEdit.getPassword()) {
+            bindingResult.addError(new FieldError("boardEdit", "password", "비밀번호가 일치하지 않습니다."));
             return "/board/edit";
         }
+
+        boardVO.updateBoardEdit(boardEdit);
 
         boardService.edit(boardVO);
         sessionStatus.setComplete();
