@@ -1,6 +1,5 @@
 package com.oopinspring.mvc.controller;
 
-import com.oopinspring.mvc.domain.BoardEdit;
 import com.oopinspring.mvc.domain.BoardVO;
 import com.oopinspring.mvc.service.BoardService;
 import lombok.AllArgsConstructor;
@@ -18,7 +17,7 @@ import javax.validation.Valid;
 @Controller
 @RequestMapping("/board")
 @AllArgsConstructor
-@SessionAttributes("boardEdit")
+@SessionAttributes("boardVO")
 public class BoardController {
 
     private final BoardService boardService;
@@ -42,44 +41,38 @@ public class BoardController {
     }
 
     @PostMapping("/write")
-    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult) {
+    public String write(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
+                        SessionStatus sessionStatus) {
         if (bindingResult.hasErrors()) {
             return "/board/write";
         }
         boardService.write(boardVO);
-        return "redirect:/board/list";
-    }
-
-    @GetMapping("/edit/{seq}")
-    public String edit(@PathVariable int seq, Model model) {
-        BoardVO boardVO = boardService.read(seq);
-        model.addAttribute("boardEdit", new BoardEdit(boardVO));
-        return "/board/edit";
-    }
-
-    @PostMapping("/edit/{seq}")
-    public String edit(@ModelAttribute @Valid BoardEdit boardEdit, BindingResult bindingResult,
-                       SessionStatus sessionStatus) {
-        BoardVO boardVO = boardService.read(boardEdit.getSeq());
-        if (bindingResult.hasErrors()) {
-            return "/board/edit";
-        }
-
-        if (boardVO.getPassword() != boardEdit.getPassword()) {
-            bindingResult.addError(new FieldError("boardEdit", "password", "비밀번호가 일치하지 않습니다."));
-            return "/board/edit";
-        }
-
-        boardVO.updateBoardEdit(boardEdit);
-
-        boardService.edit(boardVO);
         sessionStatus.setComplete();
         return "redirect:/board/list";
     }
 
-    @GetMapping("/delete/{seq}")
-    public String delete(@PathVariable int seq, Model model) {
-        model.addAttribute("seq", seq);
+    @GetMapping("/edit")
+    public String edit(@ModelAttribute BoardVO boardVO) {
+        return "/board/edit";
+    }
+
+    @PostMapping("/edit")
+    public String edit(@ModelAttribute @Valid BoardVO boardVO, BindingResult bindingResult,
+                       int pwd, SessionStatus sessionStatus, Model model) {
+        if (bindingResult.hasErrors()) {
+            return "/board/edit";
+        } else if (boardVO.getPassword() == pwd) {
+            boardService.edit(boardVO);
+            sessionStatus.setComplete();
+            return "redirect:/board/list";
+        }
+
+        model.addAttribute("msg", "비밀번호가 일치하지 않습니다.");
+        return "board/list";
+    }
+
+    @GetMapping("/delete")
+    public String delete(@ModelAttribute BoardVO boardVO) {
         return "/board/delete";
     }
 
