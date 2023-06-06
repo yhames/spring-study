@@ -16,22 +16,32 @@ class StringCalculatorAnswerTest {
 
     @Test
     void add_null_or_empty() {
-        assertEquals(cal.add(null), 0);
-        assertEquals(cal.add(""), 0);
+        assertEquals(0, cal.add(null));
+        assertEquals(0, cal.add(""));
     }
 
     @Test
     void add_single_arg() {
-        assertEquals(cal.add("1"), 1);
+        assertEquals(1, cal.add("1"));
     }
 
     @Test
     void add_with_comma() {
-        assertEquals(cal.add("1,2"), 3);
+        assertEquals(3, cal.add("1,2"));
     }
 
     @Test
     void add_with_comma_colons() {
-        assertEquals(cal.add("1,2:3"), 6);  // TODO
+        assertEquals(6, cal.add("1,2:3"));
+    }
+
+    @Test
+    void add_custom_separator() {
+        assertEquals(6, cal.add("//;\n1;2;3"));
+    }
+
+    @Test
+    void add_negative() {
+        assertThrows(RuntimeException.class, () -> cal.add("-1,2,3"));
     }
 }

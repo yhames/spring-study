@@ -1,5 +1,7 @@
 package calculator;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class StringCalculatorAnswer {
@@ -8,8 +10,7 @@ public class StringCalculatorAnswer {
         if (isBlank(text)) {
             return 0;
         }
-        String[] values = text.split(",");
-        return sum(toInts(values));
+        return sum(toInts(split(text)));
     }
 
     private boolean isBlank(String text) {
@@ -19,9 +20,18 @@ public class StringCalculatorAnswer {
     private int[] toInts(String[] values) {
         int[] numbers = new int[values.length];
         for (int i = 0; i < values.length; i++) {
-            numbers[i] = Integer.parseInt(values[i]);
+            numbers[i] = toPositive(values[i]);
         }
         return numbers;
+    }
+
+    private String[] split(String text) {
+        Matcher matcher = Pattern.compile("//(.)\n(.*)").matcher(text);
+        if (matcher.find()) {
+            String sp = matcher.group(1);
+            return matcher.group(2).split(sp);
+        }
+        return text.split(",|:");
     }
 
     private int sum(int[] numbers) {
@@ -30,6 +40,14 @@ public class StringCalculatorAnswer {
             sum += number;
         }
         return sum;
+    }
+
+    private int toPositive(String value) {
+        int number = Integer.parseInt(value);
+        if (number < 0) {
+            throw new RuntimeException();
+        }
+        return number;
     }
 
 }

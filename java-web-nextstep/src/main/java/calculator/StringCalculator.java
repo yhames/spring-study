@@ -1,7 +1,5 @@
 package calculator;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -45,10 +43,9 @@ public class StringCalculator {
         regex = regex + "|" + customSeparator;
     }
 
-    private int isPositive(int num) {
+    private void isPositive(int num) {
         if (num < 0) {
             throw new RuntimeException();
         }
-        return num;
     }
 }
