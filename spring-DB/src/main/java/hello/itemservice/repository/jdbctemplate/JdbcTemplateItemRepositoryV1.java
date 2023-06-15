@@ -22,11 +22,11 @@ import java.util.Optional;
  * JdbcTempalte
  */
 @Slf4j
-public class jdbcTemplateItemRepositoryV1 implements ItemRepository {
+public class JdbcTemplateItemRepositoryV1 implements ItemRepository {
 
     private final JdbcTemplate template;
 
-    public jdbcTemplateItemRepositoryV1(DataSource dataSource) {
+    public JdbcTemplateItemRepositoryV1(DataSource dataSource) {
         this.template = new JdbcTemplate(dataSource);
     }
 
@@ -59,23 +59,22 @@ public class jdbcTemplateItemRepositoryV1 implements ItemRepository {
     }
 
     @Override
-    public Optional<Item> findById(Long id) {
-        String sql = "select id, item_name, price, quantity from item where id = ?";
+    public Optional<Item> findById(Long itemId) {
+        String sql = "select id, item_name, price, quantity from item where id=?";
         try {
-            Item item = template.queryForObject(sql, itemRowMapper(), id);
+            Item item = template.queryForObject(sql, itemRowMapper(), itemId);
             return Optional.of(item);
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
-
     @Override
     public List<Item> findAll(ItemSearchCond cond) {
         String itemName = cond.getItemName();
         Integer maxPrice = cond.getMaxPrice();
 
-        String sql = "select id, item_name, price, quantity from item where id = ?";
+        String sql = "select id, item_name, price, quantity from item";
 
         // 동적 쿼리
         if (StringUtils.hasText(itemName) || maxPrice != null) {
@@ -94,7 +93,7 @@ public class jdbcTemplateItemRepositoryV1 implements ItemRepository {
             if (andFlag) {
                 sql += " and";
             }
-            sql += " price<= ?";
+            sql += " price <= ?";
             param.add(maxPrice);
         }
 
@@ -103,11 +102,11 @@ public class jdbcTemplateItemRepositoryV1 implements ItemRepository {
         return template.query(sql, itemRowMapper(), param.toArray());
     }
 
-    private RowMapper<Item> itemRowMapper() {
-        return ((rs, rowNum) -> {
+    private RowMapper<Item> itemRowMapper() {   // ResultSet -> Object
+        return ((rs, num) -> {
             Item item = new Item();
             item.setId(rs.getLong("id"));
-            item.setItemName((rs.getString("item_name")));
+            item.setItemName(rs.getString("item_name"));
             item.setPrice(rs.getInt("price"));
             item.setQuantity(rs.getInt("quantity"));
             return item;

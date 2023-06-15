@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 
 
-@Import(MemoryConfig.class)
+//@Import(MemoryConfig.class)
+@Import(JdbcTemplateV1Config.class)
 @SpringBootApplication(scanBasePackages = "hello.itemservice.web")	// 컨트롤러만 자동등록, 나머지 리포지토리와 서비스는 수동등록
 public class ItemServiceApplication {
 
