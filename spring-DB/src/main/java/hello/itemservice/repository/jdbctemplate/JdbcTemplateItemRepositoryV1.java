@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JdbcTempalte
+ * JdbcTemplate
  */
 @Slf4j
 public class JdbcTemplateItemRepositoryV1 implements ItemRepository {
