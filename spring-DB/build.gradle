@@ -25,13 +25,16 @@ dependencies {
 
 	// JdbcTemplate 추가
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	// MyBatis, 스프링이 공식적으로 지원하지 않는 라이브러리는 버전정보 입력필요
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.0'
+
 	// H2Database 추가
 	runtimeOnly 'com.h2database:h2'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	//테스트에서 lombok 사용
+	// 테스트에서 lombok 사용
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }

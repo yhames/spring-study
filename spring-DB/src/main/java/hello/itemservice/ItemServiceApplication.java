@@ -1,6 +1,7 @@
 package hello.itemservice;
 
 import hello.itemservice.config.JdbcTemplateV3Config;
+import hello.itemservice.config.MyBatisConfig;
 import hello.itemservice.repository.ItemRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -13,7 +14,8 @@ import org.springframework.context.annotation.Profile;
 //@Import(MemoryConfig.class)
 //@Import(JdbcTemplateV1Config.class)
 //@Import(JdbcTemplateV2Config.class)
-@Import(JdbcTemplateV3Config.class)
+//@Import(JdbcTemplateV3Config.class)
+@Import(MyBatisConfig.class)
 @SpringBootApplication(scanBasePackages = "hello.itemservice.web")    // 컨트롤러만 자동등록, 나머지 리포지토리와 서비스는 수동등록
 public class ItemServiceApplication {
 
