@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -56,18 +57,19 @@ class ItemRepositoryTest {
     }
 
     @Test
+//    @Commit // 커밋 전까지는 내부 캐시에서 데이터를 가져오기 때문에 테스트에서는 모든 트랜잭션을 롤백하므로 update 쿼리를 보려면 커밋해야함.
     void updateItem() {
         //given
         Item item = new Item("item1", 10000, 10);
-        Item savedItem = itemRepository.save(item);
+        Item savedItem = itemRepository.save(item); // save를 호출하면 내부 캐시에 저장
         Long itemId = savedItem.getId();
 
         //when
         ItemUpdateDto updateParam = new ItemUpdateDto("item2", 20000, 30);
-        itemRepository.update(itemId, updateParam);
+        itemRepository.update(itemId, updateParam); // update를 해도 내부 캐시 데이터의 값이 변경됨
 
         //then
-        Item findItem = itemRepository.findById(itemId).get();
+        Item findItem = itemRepository.findById(itemId).get();  // 조회를 해도 내부 캐시 데이터를 가져옴
         assertThat(findItem.getItemName()).isEqualTo(updateParam.getItemName());
         assertThat(findItem.getPrice()).isEqualTo(updateParam.getPrice());
         assertThat(findItem.getQuantity()).isEqualTo(updateParam.getQuantity());
