@@ -107,8 +107,16 @@ public class MyObservable extends Observable implements Runnable {
 }
 ```
 
-Observer 인터페이스는 update(Observable o, Object arg) 메서드를 구현하도록 되어있습니다.
+Observer 인터페이스는 update(Observable o, Object arg) 메서드를 구현하도록 되어있습니다.  
 update() 메서드는 Observable에서 push한 데이터를 받아서 처리하는 메서드입니다.
+
+```java
+public interface Observer {
+
+    void update(Observable o, Object arg);
+    
+}
+```
 
 데이터를 가져오는 방식을 보면 Iterable은 iter.next()를 호출하여 데이터를 반환받지만,
 Observable은 notifyObservers(Object arg)를 호출하여 데이터를 사용자에게 보냅니다.
