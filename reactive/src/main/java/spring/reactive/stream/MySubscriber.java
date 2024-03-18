@@ -4,7 +4,7 @@ import java.util.concurrent.Flow.Subscriber;
 
 import static java.util.concurrent.Flow.Subscription;
 
-public class MySubscriber<T> implements Subscriber<T> {
+public class MySubscriber implements Subscriber<Integer> {
     private Subscription subscription;
 
     @Override
@@ -15,7 +15,7 @@ public class MySubscriber<T> implements Subscriber<T> {
     }
 
     @Override
-    public void onNext(T item) {
+    public void onNext(Integer item) {
         System.out.println(Thread.currentThread() + " onNext " + item);
         this.subscription.request(1);
     }

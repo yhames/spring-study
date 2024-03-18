@@ -3,19 +3,19 @@ package spring.reactive.stream;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 
 public class MySubscription implements Subscription {
-    private final Iterator it;
+    private final Iterator<Integer> it;
 
-    private final Subscriber subscriber;
+    private final Subscriber<? super Integer> subscriber;
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor;
 
-    MySubscription(Subscriber subscriber) {
+    MySubscription(Subscriber<? super Integer> subscriber, ExecutorService executor) {
         this.subscriber = subscriber;
+        this.executor = executor;
         this.it = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).iterator();
     }
 
