@@ -125,7 +125,7 @@ Iterable은 pull 방식으로 데이터를 가져오지만, Observable은 push �
 ```java
 void iteratorTest() {
     MyIterable iter = new MyIterable();
-    for (int i : iter) {    // iter.next()를 호출하여 데이터를 반환받습니다.
+    for (int i : iter) {    // iter.next()를 호출하여 데이터를 pull합니다.
         System.out.println(i);
     }
 }
@@ -136,7 +136,7 @@ void observableTest() {
     MyObservable observable = new MyObservable();
     MyObserver observer = new MyObserver();
     observable.addObserver(observer);
-    observable.run();
+    observable.run();   // notifyObservers(Object arg)를 호출하여 데이터를 사용자에게 push합니다.
 }
 ```
 
