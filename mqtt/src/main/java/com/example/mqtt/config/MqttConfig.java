@@ -5,6 +5,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.annotation.Router;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
@@ -12,6 +13,8 @@ import org.springframework.integration.mqtt.core.MqttPahoClientFactory;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
 import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
 import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
+import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.integration.router.HeaderValueRouter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
@@ -34,6 +37,16 @@ public class MqttConfig {
     }
 
     @Bean
+    public MessageChannel topic1Channel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel topic2Channel() {
+        return new DirectChannel();
+    }
+
+    @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{MQTT_BROKER_URL});
@@ -50,7 +63,7 @@ public class MqttConfig {
     public MqttPahoMessageDrivenChannelAdapter adapter(MqttPahoClientFactory mqttClientFactory,
                                    MessageChannel mqttInputChannel) {
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                MqttClient.generateClientId(), mqttClientFactory, "spot");
+                MqttClient.generateClientId(), mqttClientFactory, "topic1", "topic2");
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(1);
@@ -59,11 +72,27 @@ public class MqttConfig {
     }
 
     @Bean
-    @ServiceActivator(inputChannel = "mqttInputChannel")
-    public MessageHandler inbound() {
+    @Router(inputChannel = "mqttInputChannel")
+    public HeaderValueRouter inbound() {
+        HeaderValueRouter router = new HeaderValueRouter(MqttHeaders.RECEIVED_TOPIC);
+        router.setChannelMapping("topic1", "topic1Channel");
+        router.setChannelMapping("topic2", "topic2Channel");
+        return router;
+    }
+
+    @Bean
+    @ServiceActivator(inputChannel = "topic1Channel")
+    public MessageHandler topic1Handler() {
         return message -> {
-            message.getHeaders().forEach((k, v) -> log.info("Header: {} = {}", k, v));
-            log.info("Received message: {}", message.getPayload());
+            log.info("Topic1 Received message: {}", message.getPayload());
+        };
+    }
+
+    @Bean
+    @ServiceActivator(inputChannel = "topic2Channel")
+    public MessageHandler topic2Handler() {
+        return message -> {
+            log.info("Topic2 Received message: {}", message.getPayload());
         };
     }
 
@@ -74,7 +103,6 @@ public class MqttConfig {
                 MqttClient.generateClientId(), mqttClientFactory);
         messageHandler.setAsync(true);
         messageHandler.setDefaultQos(1);
-        messageHandler.setDefaultTopic("spot");
         return messageHandler;
     }
 }
