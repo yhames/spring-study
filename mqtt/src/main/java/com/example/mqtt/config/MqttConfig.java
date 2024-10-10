@@ -27,26 +27,6 @@ public class MqttConfig {
     public static final String MQTT_BROKER_URL = "tcp://localhost:1883";
 
     @Bean
-    public MessageChannel mqttInputChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean
-    public MessageChannel mqttOutboundChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean
-    public MessageChannel topic1Channel() {
-        return new DirectChannel();
-    }
-
-    @Bean
-    public MessageChannel topic2Channel() {
-        return new DirectChannel();
-    }
-
-    @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         MqttConnectOptions options = new MqttConnectOptions();
         options.setServerURIs(new String[]{MQTT_BROKER_URL});
@@ -69,40 +49,5 @@ public class MqttConfig {
         adapter.setQos(1);
         adapter.setOutputChannel(mqttInputChannel);
         return adapter;
-    }
-
-    @Bean
-    @Router(inputChannel = "mqttInputChannel")
-    public HeaderValueRouter inbound() {
-        HeaderValueRouter router = new HeaderValueRouter(MqttHeaders.RECEIVED_TOPIC);
-        router.setChannelMapping("topic1", "topic1Channel");
-        router.setChannelMapping("topic2", "topic2Channel");
-        return router;
-    }
-
-    @Bean
-    @ServiceActivator(inputChannel = "topic1Channel")
-    public MessageHandler topic1Handler() {
-        return message -> {
-            log.info("Topic1 Received message: {}", message.getPayload());
-        };
-    }
-
-    @Bean
-    @ServiceActivator(inputChannel = "topic2Channel")
-    public MessageHandler topic2Handler() {
-        return message -> {
-            log.info("Topic2 Received message: {}", message.getPayload());
-        };
-    }
-
-    @Bean
-    @ServiceActivator(inputChannel = "mqttOutboundChannel")
-    public MessageHandler outBound(MqttPahoClientFactory mqttClientFactory) {
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(
-                MqttClient.generateClientId(), mqttClientFactory);
-        messageHandler.setAsync(true);
-        messageHandler.setDefaultQos(1);
-        return messageHandler;
     }
 }
