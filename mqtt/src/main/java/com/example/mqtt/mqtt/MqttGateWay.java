@@ -9,4 +9,17 @@ import org.springframework.messaging.handler.annotation.Header;
 public interface MqttGateWay {
 
     void sendToMqtt(@Header(MqttHeaders.TOPIC) String topic, String payload);
+
+    void sendToMqtt(@Header(MqttHeaders.TOPIC) String topic,
+                    @Header(MqttHeaders.QOS) int qos,
+                    String payload);
+
+    void sendToMqtt(@Header(MqttHeaders.TOPIC) String topic,
+                    @Header(MqttHeaders.RETAINED) boolean retained,
+                    String payload);
+
+    void sendToMqtt(@Header(MqttHeaders.TOPIC) String topic,
+                    @Header(MqttHeaders.QOS) int qos,
+                    @Header(MqttHeaders.RETAINED) boolean retained,
+                    String payload);
 }
