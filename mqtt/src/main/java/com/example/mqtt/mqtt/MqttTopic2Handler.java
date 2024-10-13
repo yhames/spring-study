@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class MqttTopic2Handler {
 
     @ServiceActivator(inputChannel = MqttChannel.TOPIC2_CHANNEL)
-    public void handleMessage(String message) {
-        log.info("Received message in topic2: {}", message);
+    public void handleMessage(String payload) {
+        log.info("Received message in topic2: {}", payload);
     }
 }
