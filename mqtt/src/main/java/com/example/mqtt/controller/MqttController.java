@@ -12,14 +12,8 @@ public class MqttController {
 
     private final MqttPublisher mqttPublisher;
 
-
-    @GetMapping("/publish")
-    public void publish() {
-        mqttPublisher.publish("this is a test message");
-    }
-
     @GetMapping("/publish/{topic}")
-    public void publishToTopic(@PathVariable String topic, @RequestParam String message) {
+    public void publish(@PathVariable String topic, @RequestParam String message) {
         mqttPublisher.publish(topic, message);
     }
 }
