@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: webflux01
+
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/fastsns
+    username: root
+    password: fastcampus
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
