@@ -136,4 +136,23 @@ class UserQueueServiceTest {
                 .expectNext(-1L)
                 .verifyComplete();
     }
+
+    @Test
+    void isAllowedByToken() {
+        StepVerifier.create(userQueueService.isAllowedByToken("default", 100L, ""))
+                .expectNext(false)
+                .verifyComplete();
+        String sha256 = "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8";
+        StepVerifier.create(userQueueService.isAllowedByToken("default", 100L, sha256))
+                .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    void generateToken() {
+        String sha256 = "d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8";
+        StepVerifier.create(userQueueService.generateToken("default", 100L))
+                .expectNext(sha256) // Default token for empty queue
+                .verifyComplete();
+    }
 }

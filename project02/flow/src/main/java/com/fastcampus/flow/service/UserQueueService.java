@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 
 import static com.fastcampus.flow.execption.ErrorCode.QUEUE_ALREADY_REGISTERED_USER;
@@ -52,11 +55,32 @@ public class UserQueueService {
                 .map(rank -> rank >= 0);  // If the rank is -1, the user is not in the queue
     }
 
+    public Mono<Boolean> isAllowedByToken(final String queue, final Long userId, final String token) {
+        return this.generateToken(queue, userId)
+                .filter(gen -> gen.equals(token))
+                .map(i -> true)
+                .defaultIfEmpty(false);
+    }
+
     public Mono<Long> getRank(final String queue, final Long userId) {
         return redisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString())
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0 ? rank + 1 : rank);
+    }
 
+    public Mono<String> generateToken(final String queue, final Long userId) {
+        try {
+            MessageDigest instance = MessageDigest.getInstance("SHA-256");
+            String input = "user-queue-%s-%d".formatted(queue, userId);
+            byte[] encoded = instance.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte aByte : encoded) {
+                sb.append(String.format("%02x", aByte));
+            }
+            return Mono.just(sb.toString());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Scheduled(initialDelay = 5000, fixedDelay = 3000)   // After 5 seconds, repeat every 3 seconds
