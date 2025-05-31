@@ -40,4 +40,11 @@ public class UserQueueService {
                 .defaultIfEmpty(-1L)
                 .map(rank -> rank >= 0);  // If the rank is -1, the user is not in the queue
     }
+
+    public Mono<Long> getRank(final String queue, final Long userId) {
+        return redisTemplate.opsForZSet().rank(USER_QUEUE_WAIT_KEY.formatted(queue), userId.toString())
+                .defaultIfEmpty(-1L)
+                .map(rank -> rank >= 0 ? rank + 1 : rank);
+
+    }
 }

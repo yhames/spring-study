@@ -12,8 +12,6 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.test.StepVerifier;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 @Import(EmbeddedRedis.class)
 @ActiveProfiles("test")
@@ -114,6 +112,28 @@ class UserQueueServiceTest {
                         .then(userQueueService.allowUser("default", 3L))
                         .then(userQueueService.isAllowed("default", 100L)))
                 .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    void getRank() {
+        StepVerifier.create(userQueueService.registerWaitQueue("default", 100L)
+                        .then(userQueueService.getRank("default", 100L)))
+                .expectNext(1L)
+                .verifyComplete();
+        StepVerifier.create(userQueueService.registerWaitQueue("default", 101L)
+                        .then(userQueueService.getRank("default", 101L)))
+                .expectNext(2L)
+                .verifyComplete();
+        StepVerifier.create(userQueueService.getRank("default", 100L))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
+    @Test
+    void emptyRank() {
+        StepVerifier.create(userQueueService.getRank("default", 100L))
+                .expectNext(-1L)
                 .verifyComplete();
     }
 }
