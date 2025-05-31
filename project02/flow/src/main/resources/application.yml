@@ -1,5 +1,10 @@
+server:
+  port: 9010
+
 spring:
   application:
     name: flow
-server:
-  port: 9010
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
