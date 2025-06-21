@@ -1,3 +1,7 @@
+val bootJar: org.springframework.boot.gradle.tasks.bundling.BootJar by tasks
+
+bootJar.enabled = false
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.3"
@@ -13,15 +17,46 @@ java {
     }
 }
 
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "org.springframework.boot")
+    apply(plugin = "io.spring.dependency-management")
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        // Spring Boot
+        implementation("org.springframework.boot:spring-boot-starter")
+        implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+        implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+        // Lombok
+        compileOnly("org.projectlombok:lombok")
+        annotationProcessor("org.projectlombok:lombok")
+
+        // H2
+        runtimeOnly("com.h2database:h2")
+
+        // Mysql
+        runtimeOnly("com.mysql:mysql-connector-j")
+
+        // Test
+        testImplementation("org.springframework.boot:spring-boot-starter-test")
+    }
 }
+
 
 tasks.withType<Test> {
     useJUnitPlatform()
