@@ -1,1 +1,25 @@
-spring.application.name=coupon-core
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    hikari: # HikariCP is the default connection pool in Spring Boot
+      jdbc-url: jdbc:mysql://localhost:3306/coupon?useUnicode=true&characterEncoding=UTF-8&rewriteBatchedStatements=true
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      maximum-pool-size: 10
+      max-lifetime: 30_000 # 30 seconds
+      connection-timeout: 3_000 # 3 seconds
+      username: coupon
+      password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  data:
+    redis:
+      host: localhost
+      port: 6380
