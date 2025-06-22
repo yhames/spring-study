@@ -5,8 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.couponcore.execption.CouponIssueException;
 
 import java.time.LocalDateTime;
+
+import static org.example.couponcore.execption.ErrorCode.INVALID_COUPON_ISSUE_DATE;
+import static org.example.couponcore.execption.ErrorCode.INVALID_COUPON_ISSUE_QUANTITY;
 
 @Getter
 @Builder
@@ -44,4 +48,30 @@ public class Coupon extends BaseTimeEntity {
 
     @Column(name = "date_issue_end", nullable = false)
     private LocalDateTime dateIssueEnd;
+
+    public boolean availableIssueQuantity() {
+        if (totalQuantity == null) {
+            return true; // No limit on total quantity, so always available
+        }
+        return totalQuantity > issuedQuantity;
+    }
+
+    public boolean availableIssueDate() {
+        LocalDateTime now = LocalDateTime.now();
+        return dateIssueStart.isBefore(now) && dateIssueEnd.isAfter(now);
+    }
+
+    public void issue() {
+        if (!availableIssueQuantity()) {
+            throw new CouponIssueException(INVALID_COUPON_ISSUE_QUANTITY,
+                    "발급 가능한 수량을 초과합니다. total: %d, issued: %d"
+                            .formatted(totalQuantity, issuedQuantity));
+        }
+        if (!availableIssueDate()) {
+            throw new CouponIssueException(INVALID_COUPON_ISSUE_DATE,
+                    "발급 기간이 아닙니다. request: %s, issueStart: %s, issueEnd: %s"
+                            .formatted(LocalDateTime.now(), dateIssueStart, dateIssueEnd));
+        }
+        issuedQuantity++;
+    }
 }
