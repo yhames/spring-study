@@ -35,13 +35,13 @@ public class Coupon extends BaseTimeEntity {
     private Integer totalQuantity;
 
     @Column(name = "issued_quantity", nullable = false)
-    private Integer issuedQuantity;
+    private int issuedQuantity;
 
     @Column(name = "discount_amount", nullable = false)
-    private Integer discountAmount;
+    private int discountAmount;
 
     @Column(name = "min_available_amount", nullable = false)
-    private Integer minAvailableAmount;
+    private int minAvailableAmount;
 
     @Column(name = "date_issue_start", nullable = false)
     private LocalDateTime dateIssueStart;

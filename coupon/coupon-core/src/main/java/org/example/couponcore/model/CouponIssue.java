@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "coupon")
+@Table(name = "coupon_issues")
 public class CouponIssue extends BaseTimeEntity {
 
     @Id
