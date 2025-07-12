@@ -1,16 +1,22 @@
 # Coupon Issuance Service
 
-## Coupon Core
+- Coupon Core
+  : Coupon API와 Coupon Consumer에서 공통적으로 사용하는 기능
 
-Coupon API와 Coupon Consumer에서 공통적으로 사용하는 기능
+- Coupon API
+  : 쿠폰에 대한 API 서버, 유저에 대한 요청을 처리
 
-## Coupon API
+- Coupon Consumer
+  : 비동기적으로 발급되는 쿠폰 목록을 읽어서 실제 쿠폰 발급을 처리
 
-쿠폰에 대한 API 서버, 유저에 대한 요청을 처리
+## 동시성 문제 해결
 
-## Coupon Consumer
+### 트랜잭션과 synchronized
 
-비동기적으로 발급되는 쿠폰 목록을 읽어서 실제 쿠폰 발급을 처리
+- 트랜잭션 메서드 내부에서 `synchronized`를 사용하는 경우
+  : 트랜잭션이 커밋되기 전에 락을 해제하기 때문에 트랜잭션 커밋 전 동시성 문제가 발생할 수 있음.
+
+- `Scale-out` 환경에서 동시성 문제를 해결할 수 없음.
 
 ## 트러블슈팅
 
