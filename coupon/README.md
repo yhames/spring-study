@@ -13,10 +13,57 @@
 
 ### 트랜잭션과 synchronized
 
+> Java의 synchronized 키워드를 사용하여 락 구현
+
 - 트랜잭션 메서드 내부에서 `synchronized`를 사용하는 경우
   : 트랜잭션이 커밋되기 전에 락을 해제하기 때문에 트랜잭션 커밋 전 동시성 문제가 발생할 수 있음.
 
 - `Scale-out` 환경에서 동시성 문제를 해결할 수 없음.
+
+### Redis Lock
+
+> Redis의 분산 락을 사용하여 동시성 문제 해결
+
+- Redisson 라이브러를 사용하는 이유
+  : redisson는 분산락 인터페이스를 제공하고(`RLock`), 락을 획득할 때 `tryLock` 메서드를 사용하여 락을 획득할 수 있는지 확인 가능.
+  : 또한 lettuce와 다르게 스핀 락을 사용하지 않고, pub/sub을 사용하여 락을 획득
+- `DistributeLockExecutor` 템플릭 메서드 패턴을 사용하여 락 획득 및 해제를 자동으로 처리
+
+```java
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DistributeLockExecutor {
+
+    private final RedissonClient redisson;
+
+    public void execute(String lockName, long waitMilliSecond, long leaseMilliSecond, Runnable logic) {
+        RLock lock = redisson.getLock(lockName);
+        try {
+            boolean isLocked = lock.tryLock(waitMilliSecond, leaseMilliSecond, TimeUnit.MILLISECONDS);
+            if (!isLocked) {
+                throw new IllegalStateException("[" + lockName + "] Lock acquisition failed.");
+            }
+            logic.run();
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+}
+```
+
+```java
+    public void issueCoupon(CouponIssueRequestDto request) {
+        distributeLockExecutor.execute("lock_" + request.couponId(), 10000, 10000,
+                () -> couponIssueService.issue(request.couponId(), request.userId()));
+        log.info("쿠폰 발급 완료: couponId={}, userId={}", request.couponId(), request.userId());
+    }
+```
 
 ## 트러블슈팅
 
