@@ -5,7 +5,7 @@ services:
       - "8089:8089"
     volumes:
       - ./:/mnt/locust
-    command: -f /mnt/locust/locustfile-hello.py --master -H http://host.docker.internal:8080
+    command: -f /mnt/locust/locustfile-issue-v1.py --master -H http://host.docker.internal:8080
     extra_hosts:
       - "host.docker.internal:${HOST_IP}"
 
@@ -14,6 +14,6 @@ services:
     scale: 3
     volumes:
       - ./:/mnt/locust
-    command: -f /mnt/locust/locustfile-hello.py --worker --master-host master
+    command: -f /mnt/locust/locustfile-issue-v1.py --worker --master-host master
     extra_hosts:
       - "host.docker.internal:${HOST_IP}"

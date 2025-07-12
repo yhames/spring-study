@@ -23,10 +23,10 @@ public class CouponIssueService {
     private final CouponIssueJpaRepository couponIssueJpaRepository;
 
     @Transactional
-    public CouponIssue issue(long couponId, long userId) {
+    public void issue(long couponId, long userId) {
         Coupon coupon = findCouponById(couponId);
         coupon.issue();
-        return saveCouponIssue(couponId, userId);
+        saveCouponIssue(couponId, userId);
     }
 
     @Transactional
