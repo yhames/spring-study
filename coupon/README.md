@@ -22,12 +22,14 @@
 
 ### Redis Lock
 
-> Redis의 분산 락을 사용하여 동시성 문제 해결
+> Redis는 분산 환경에서 동시성 문제를 해결하기 위한 분산 락을 제공 (Redisson)
 
-- Redisson 라이브러를 사용하는 이유
+- Redisson 라이브러리를 사용하는 이유
   : redisson는 분산락 인터페이스를 제공하고(`RLock`), 락을 획득할 때 `tryLock` 메서드를 사용하여 락을 획득할 수 있는지 확인 가능.
   : 또한 lettuce와 다르게 스핀 락을 사용하지 않고, pub/sub을 사용하여 락을 획득
-- `DistributeLockExecutor` 템플릭 메서드 패턴을 사용하여 락 획득 및 해제를 자동으로 처리
+
+- `DistributeLockExecutor`
+  : 템플릿 메서드 패턴을 사용하여 락 획득 및 해제를 자동으로 처리
 
 ```java
 @Slf4j
