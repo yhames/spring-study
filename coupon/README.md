@@ -32,6 +32,7 @@
   : 템플릿 메서드 패턴을 사용하여 락 획득 및 해제를 자동으로 처리
 
 ```java
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -61,10 +62,37 @@ public class DistributeLockExecutor {
 
 ```java
     public void issueCoupon(CouponIssueRequestDto request) {
-        distributeLockExecutor.execute("lock_" + request.couponId(), 10000, 10000,
-                () -> couponIssueService.issue(request.couponId(), request.userId()));
-        log.info("쿠폰 발급 완료: couponId={}, userId={}", request.couponId(), request.userId());
-    }
+    distributeLockExecutor.execute("lock_" + request.couponId(), 10000, 10000,
+            () -> couponIssueService.issue(request.couponId(), request.userId()));
+    log.info("쿠폰 발급 완료: couponId={}, userId={}", request.couponId(), request.userId());
+}
+```
+
+### Record Lock
+
+> RDBMS에서 제공하는 레코드 락을 사용하여 동시성 문제 해결  
+> JPA의 `@Lock` 어노테이션을 사용하여 레코드 락을 획득할 수 있음
+
+- 레코드 락
+  : 특정 레코드에 대한 락을 획득하여 다른 트랜잭션이 해당 레코드를 조회하거나 수정하지 못하도록 함.
+  : `SELECT ... FOR UPDATE` 쿼리를 사용하여 레코드 락을 획득
+  : 트랜잭션이 커밋될 때 락이 해제됨.
+
+- JPA에서 레코드 락을 획득하는 방법
+  : `@Lock` 어노테이션을 사용하여 레코드 락을 획득할 수 있음.
+  : `LockModeType.PESSIMISTIC_WRITE`를 사용하여 레코드 락을 획득
+
+- Mysql에서 병목 발생
+  : 복잡한 인프라 없이 트랜잭션 단위의 ACID를 보장할 수 있지만,
+  : 레코드 락으로 인해 병목 현상이 발생할 수 있음.
+
+```java
+public interface CouponJpaRepository extends JpaRepository<Coupon, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)   // Transaction이 커밋될 때 Lock이 해제됨
+    @Query("SELECT c FROM Coupon c WHERE c.id = :id")
+    Optional<Coupon> findCouponByIdWithLock(long id);
+}
 ```
 
 ## 트러블슈팅
