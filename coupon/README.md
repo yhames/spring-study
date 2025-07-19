@@ -95,6 +95,66 @@ public interface CouponJpaRepository extends JpaRepository<Coupon, Long> {
 }
 ```
 
+### Redis Script
+
+> Redis 분산 Lock을 사용하면 동시성 문제를 해결할 수 있지만,
+> 분산 Lock에 병목이 발생하게 된다.
+
+가장 효율적이 방법은 `Redis Script`를 사용하여 동시성 문제를 해결하는 것이다.
+
+- Redis Script
+  : `Lua 스크립트`를 사용하여 Redis에서 여러 명령어를 동시에 원자적으로 실행되는 명령어를 작성할 수 있음.
+  : Redis는 `Lua 스크립트`를 실행할 때, 스크립트가 실행되는 동안 다른 클라이언트의 명령어를 차단함.
+  : 이를 통해 동시성 문제를 해결할 수 있음.
+
+```java
+
+@Repository
+@RequiredArgsConstructor
+public class RedisRepository {
+    private RedisScript<String> issueRequestScript() {
+        String script = """
+                if redis.call('SISMEMBER', KEYS[1], ARGV[1]) == 1 then
+                    return '2'
+                end
+                
+                if tonumber(ARGV[2]) <= redis.call('SCARD', KEYS[1]) then
+                    return '3'
+                end
+                
+                redis.call('SADD', KEYS[1], ARGV[1])
+                redis.call('RPUSH', KEYS[2], ARGV[3])
+                return '1'
+                """;
+        return RedisScript.of(script, String.class);
+    }
+}
+```
+
+```java
+
+@Repository
+@RequiredArgsConstructor
+public class RedisRepository {
+    public void issueRequest(long couponId, long userId, int totalQuantity) {
+        CouponIssueRequest couponIssueRequest = new CouponIssueRequest(couponId, userId);
+        try {
+            String code = redisTemplate.execute(
+                    issueScript,
+                    List.of(getIssueRequestKey(couponId), issueRequestQueueKey),
+                    String.valueOf(userId),
+                    String.valueOf(totalQuantity),
+                    objectMapper.writeValueAsString(couponIssueRequest)
+            );
+            checkRequestResult(CouponIssueRequestCode.of(code));
+        } catch (JsonProcessingException e) {
+            throw new CouponIssueException(ErrorCode.FAILED_COUPON_ISSUE_REQUEST,
+                    "input: %s".formatted(couponIssueRequest));
+        }
+    }
+}
+```
+
 ## 트러블슈팅
 
 <details>

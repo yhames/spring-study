@@ -17,4 +17,8 @@ public class CouponIssueRequestService {
         couponIssueService.issue(request.couponId(), request.userId());
         log.info("쿠폰 발급 완료: couponId={}, userId={}", request.couponId(), request.userId());
     }
+
+    public void issueCouponAsync(CouponIssueRequestDto request) {
+        couponIssueService.issue(request.couponId(), request.userId());
+    }
 }
