@@ -4,13 +4,13 @@ import lombok.Getter;
 import lombok.ToString;
 import org.springframework.util.Assert;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 @Getter
 @ToString
 public class Member {
 
-    private String email;
+    private Email email;
 
     private String nickname;
 
@@ -18,16 +18,19 @@ public class Member {
 
     private MemberStatus status;
 
-    private Member(String email, String nickname, String passwordHash) {
-        this.email = Objects.requireNonNull(email);
-        this.nickname = Objects.requireNonNull(nickname);
-        this.passwordHash = Objects.requireNonNull(passwordHash);
-
-        this.status = MemberStatus.PENDING;
+    private Member() {
+        // Default constructor for JPA
     }
 
-    public static Member create(String email, String nickname, String password, PasswordEncoder passwordEncoder) {
-        return new Member(email, nickname, passwordEncoder.encode(password));
+    public static Member create(MemberCreateRequest createRequest, PasswordEncoder passwordEncoder) {
+        Member member = new Member();
+
+        Email email = new Email(createRequest.email());
+        member.email = requireNonNull(email);
+        member.nickname = requireNonNull(createRequest.nickname());
+        member.passwordHash = passwordEncoder.encode(createRequest.password());
+        member.status = MemberStatus.PENDING;
+        return member;
     }
 
     public void activate() {
@@ -50,13 +53,17 @@ public class Member {
         Assert.hasText(nickname, "Nickname must not be empty");
         Assert.state(status == MemberStatus.ACTIVE, "Member must be ACTIVE to change nickname");
 
-        this.nickname = nickname;
+        this.nickname = requireNonNull(nickname);
     }
 
     public void changePassword(String password, PasswordEncoder passwordEncoder) {
         Assert.hasText(password, "New password must not be empty");
         Assert.state(status == MemberStatus.ACTIVE, "Member must be ACTIVE to change password");
 
-        this.passwordHash = passwordEncoder.encode(password);
+        this.passwordHash = passwordEncoder.encode(requireNonNull(password));
+    }
+
+    public boolean isActive() {
+        return this.status == MemberStatus.ACTIVE;
     }
 }

@@ -29,7 +29,8 @@ class MemberTest {
                 return encode(password).equals(passwordHash);
             }
         };
-        member = Member.create("test@example.com", "testuser", "secret", passwordEncoder);
+        MemberCreateRequest createRequest = new MemberCreateRequest("test@example.com", "testuser", "secret");
+        member = Member.create(createRequest, passwordEncoder);
     }
 
     @Test
@@ -100,6 +101,29 @@ class MemberTest {
 
         assertThat(member.getPasswordHash()).isNotEqualTo(before);
         assertThat(member.verifyPassword(newPassword, passwordEncoder)).isTrue();
+    }
+
+    @Test
+    void isActive() {
+        assertThat(member.isActive()).isFalse();
+
+        member.activate();
+        assertThat(member.isActive()).isTrue();
+
+        member.deactivate();
+        assertThat(member.isActive()).isFalse();
+    }
+
+    @Test
+    void invalidEmail() {
+        MemberCreateRequest invalidCreateRequest = new MemberCreateRequest("invalid-email", "testuser", "secret");
+
+        assertThatThrownBy(() -> Member.create(invalidCreateRequest, passwordEncoder))
+                .isInstanceOf(IllegalArgumentException.class);
+
+
+        MemberCreateRequest validCreateRequest = new MemberCreateRequest("test@test.com", "testuser", "secret");
+        Member.create(validCreateRequest, passwordEncoder);
     }
 
 }
