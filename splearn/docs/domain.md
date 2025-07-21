@@ -28,8 +28,8 @@ _Entity_
 
 #### 행위
 
-- `create()`: 회원 생성: email, nickname, password, passwordEncoder
-- `activate()`: 가입 완료를 시킨다.
+- `static register()`: 회원 등록: email, nickname, password, passwordEncoder
+- `activate()`: 등록 완료를 시킨다.
 - `deactivate()`: 탈퇴한다.
 - `verifyPassword()`: 비밀번호를 검증한다.
 - `changeNickname()`: 닉네임을 변경한다.
@@ -37,10 +37,10 @@ _Entity_
 
 #### 규칙
 
-- 회원 생성 후 상태는 가입 대기
-- 일정 조건을 만족하면 가입 완료가 된다.
-- 가입 대기 상태에서만 가입 완료가 될 수 있다.
-- 가입 완료 상태에서는 탈퇴할 수 있다.
+- 회원 생성 후 상태는 등록 대기
+- 일정 조건을 만족하면 등록 완료가 된다.
+- 등록 대기 상태에서만 등록 완료가 될 수 있다.
+- 등록 완료 상태에서는 탈퇴할 수 있다.
 - 회원의 비밀번호는 해시를 만들어서 저장한다.
 
 ### 회원 상태
@@ -49,8 +49,8 @@ _Enum_
 
 #### 상수
 
-- `PENDING`: 가입 대기
-- `ACTIVE`: 가입 완료
+- `PENDING`: 등록 대기
+- `ACTIVE`: 등록 완료
 - `DEACTIVATED`: 탈퇴
 
 ### 패스워드 인코더(PasswordEncoder)

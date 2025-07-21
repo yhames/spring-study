@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.example.splearn.domain.MemberFixture.createMemberRegisterRequest;
+import static org.example.splearn.domain.MemberFixture.createPasswordEncoder;
 
 /**
  * - 도메인 모델에 대한 테스트는 외부 의존성을 최소화해서 변경에 유연하고 실행속도가 빠르게 유지한다.
@@ -18,23 +20,14 @@ class MemberTest {
 
     @BeforeEach
     void setUp() {
-        this.passwordEncoder = new PasswordEncoder() {
-            @Override
-            public String encode(String password) {
-                return password.toUpperCase();
-            }
-
-            @Override
-            public boolean matches(String password, String passwordHash) {
-                return encode(password).equals(passwordHash);
-            }
-        };
-        MemberCreateRequest createRequest = new MemberCreateRequest("test@example.com", "testuser", "secret");
-        member = Member.create(createRequest, passwordEncoder);
+        this.passwordEncoder = createPasswordEncoder();
+        MemberRegisterRequest memberRegisterRequest = createMemberRegisterRequest();
+        member = Member.register(memberRegisterRequest, passwordEncoder);
     }
 
+
     @Test
-    void createMember() {
+    void registerMember() {
         assertThat(member.getStatus()).isEqualTo(MemberStatus.PENDING);
     }
 
@@ -116,14 +109,14 @@ class MemberTest {
 
     @Test
     void invalidEmail() {
-        MemberCreateRequest invalidCreateRequest = new MemberCreateRequest("invalid-email", "testuser", "secret");
+        MemberRegisterRequest memberRegisterRequest = createMemberRegisterRequest("invalid-email");
 
-        assertThatThrownBy(() -> Member.create(invalidCreateRequest, passwordEncoder))
+        assertThatThrownBy(() -> Member.register(memberRegisterRequest, passwordEncoder))
                 .isInstanceOf(IllegalArgumentException.class);
 
 
-        MemberCreateRequest validCreateRequest = new MemberCreateRequest("test@test.com", "testuser", "secret");
-        Member.create(validCreateRequest, passwordEncoder);
+        MemberRegisterRequest valid = createMemberRegisterRequest();
+        Member.register(valid, passwordEncoder);
     }
 
 }
