@@ -20,7 +20,7 @@ public class AsyncCouponIssueServiceV2 implements AsyncCouponIssueService {
      */
     @Override
     public void issue(long couponId, long userId) {
-        CouponRedisEntity coupon = couponCacheService.getCouponFromCache(couponId);
+        CouponRedisEntity coupon = couponCacheService.getCouponFromLocalCache(couponId);
         coupon.checkIssuableCoupon();
         issueRequest(couponId, userId, coupon.totalQuantity());
     }
