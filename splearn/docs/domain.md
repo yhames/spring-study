@@ -21,7 +21,8 @@ _Entity_
 
 #### 속성
 
-- `email`: 이메일 주소, 고유 식별자
+- `id`: 'Long'
+- `email`: 이메일 주소, 고유 식별자 - Natural ID
 - `nickname`: 닉네임
 - `passwordHash`: 해싱된 비밀번호
 - `status`: 회원 상태 (활성, 비활성 등)
@@ -52,6 +53,10 @@ _Enum_
 - `PENDING`: 등록 대기
 - `ACTIVE`: 등록 완료
 - `DEACTIVATED`: 탈퇴
+
+### DuplicateEmailException
+
+_Exception_
 
 ### 패스워드 인코더(PasswordEncoder)
 
