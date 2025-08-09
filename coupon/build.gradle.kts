@@ -58,6 +58,10 @@ subprojects {
         annotationProcessor("jakarta.annotation:jakarta.annotation-api")
         annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
+        // Monitoring
+        implementation("org.springframework.boot:spring-boot-starter-actuator")
+        implementation("io.micrometer:micrometer-registry-prometheus")
+
         // Test
         testImplementation("org.springframework.boot:spring-boot-starter-test")
     }
