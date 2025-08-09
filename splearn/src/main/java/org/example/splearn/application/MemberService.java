@@ -1,13 +1,18 @@
 package org.example.splearn.application;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.splearn.application.provided.MemberRegister;
 import org.example.splearn.application.required.EmailSender;
 import org.example.splearn.application.required.MemberRepository;
 import org.example.splearn.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 @Service
+@Validated
+@Transactional
 @RequiredArgsConstructor
 public class MemberService implements MemberRegister {
 
@@ -16,7 +21,7 @@ public class MemberService implements MemberRegister {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Member register(MemberRegisterRequest request) {
+    public Member register(@Valid MemberRegisterRequest request) {
         checkDuplicateEmail(request);
         Member member = Member.register(request, passwordEncoder);
         memberRepository.save(member);
