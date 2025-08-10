@@ -1,5 +1,6 @@
 package org.example.splearn.application.provided;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import org.example.splearn.SplearnTestConfiguration;
@@ -14,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @Transactional
 @Import({SplearnTestConfiguration.class})
-public record MemberRegisterTest(MemberRegister memberRegister) {
+public record MemberRegisterTest(MemberRegister memberRegister, EntityManager entityManager) {
 
     @Test
     void register() {
@@ -28,7 +29,6 @@ public record MemberRegisterTest(MemberRegister memberRegister) {
         memberRegister.register(MemberFixture.createMemberRegisterRequest());
         assertThatThrownBy(() -> memberRegister.register(MemberFixture.createMemberRegisterRequest()))
                 .isInstanceOf(DuplicateEmailException.class);
-
     }
 
     @Test
@@ -39,6 +39,19 @@ public record MemberRegisterTest(MemberRegister memberRegister) {
                 .isInstanceOf(ConstraintViolationException.class);
         assertThatThrownBy(() -> memberRegister.register(new MemberRegisterRequest("test@test.com", "test123", "12345")))
                 .isInstanceOf(ConstraintViolationException.class);
+    }
+
+    @Test
+    void activate() {
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
+        entityManager.flush();
+        entityManager.clear();
+
+        Member activated = memberRegister.activate(member.getId());
+        entityManager.flush();
+
+        assertThat(activated.getId()).isEqualTo(member.getId());
+        assertThat(activated.getStatus()).isEqualTo(MemberStatus.ACTIVE);
     }
 
 }

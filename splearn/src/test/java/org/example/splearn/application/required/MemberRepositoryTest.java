@@ -40,4 +40,5 @@ class MemberRepositoryTest {
         assertThatThrownBy(() -> memberRepository.save(duplicateMember))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
 }

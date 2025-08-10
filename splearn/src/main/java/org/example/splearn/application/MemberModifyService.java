@@ -3,6 +3,7 @@ package org.example.splearn.application;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.splearn.application.provided.MemberFinder;
 import org.example.splearn.application.provided.MemberRegister;
 import org.example.splearn.application.required.EmailSender;
 import org.example.splearn.application.required.MemberRepository;
@@ -14,11 +15,12 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @Transactional
 @RequiredArgsConstructor
-public class MemberService implements MemberRegister {
+public class MemberModifyService implements MemberRegister {
 
     private final MemberRepository memberRepository;
     private final EmailSender emailSender;
     private final PasswordEncoder passwordEncoder;
+    private final MemberFinder memberFinder;
 
     @Override
     public Member register(@Valid MemberRegisterRequest request) {
@@ -27,6 +29,13 @@ public class MemberService implements MemberRegister {
         memberRepository.save(member);
         sendWelcomeEmail(member);
         return member;
+    }
+
+    @Override
+    public Member activate(Long memberId) {
+        Member member = memberFinder.find(memberId);
+        member.activate();
+        return memberRepository.save(member);
     }
 
     private void sendWelcomeEmail(Member member) {
