@@ -4,7 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.example.splearn.SplearnTestConfiguration;
 import org.example.splearn.domain.member.Member;
-import org.example.splearn.domain.MemberFixture;
+import org.example.splearn.domain.member.MemberFixture;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;

@@ -1,7 +1,4 @@
-package org.example.splearn.domain;
-
-import org.example.splearn.domain.member.MemberRegisterRequest;
-import org.example.splearn.domain.member.PasswordEncoder;
+package org.example.splearn.domain.member;
 
 public class MemberFixture {
 

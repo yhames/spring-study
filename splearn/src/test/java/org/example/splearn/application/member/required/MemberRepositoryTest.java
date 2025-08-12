@@ -9,8 +9,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.example.splearn.domain.MemberFixture.createMemberRegisterRequest;
-import static org.example.splearn.domain.MemberFixture.createPasswordEncoder;
+import static org.example.splearn.domain.member.MemberFixture.createMemberRegisterRequest;
+import static org.example.splearn.domain.member.MemberFixture.createPasswordEncoder;
 
 @DataJpaTest
 class MemberRepositoryTest {

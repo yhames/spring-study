@@ -1,16 +1,12 @@
-package org.example.splearn.domain;
+package org.example.splearn.domain.member;
 
-import org.example.splearn.domain.member.Member;
-import org.example.splearn.domain.member.MemberRegisterRequest;
-import org.example.splearn.domain.member.MemberStatus;
-import org.example.splearn.domain.member.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.example.splearn.domain.MemberFixture.createMemberRegisterRequest;
-import static org.example.splearn.domain.MemberFixture.createPasswordEncoder;
+import static org.example.splearn.domain.member.MemberFixture.createMemberRegisterRequest;
+import static org.example.splearn.domain.member.MemberFixture.createPasswordEncoder;
 
 /**
  * - 도메인 모델에 대한 테스트는 외부 의존성을 최소화해서 변경에 유연하고 실행속도가 빠르게 유지한다.
