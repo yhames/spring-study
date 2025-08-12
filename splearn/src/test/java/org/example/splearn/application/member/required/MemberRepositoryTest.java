@@ -1,7 +1,7 @@
-package org.example.splearn.application.required;
+package org.example.splearn.application.member.required;
 
 import jakarta.persistence.EntityManager;
-import org.example.splearn.domain.Member;
+import org.example.splearn.domain.member.Member;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;

@@ -1,5 +1,9 @@
 package org.example.splearn.domain;
 
+import org.example.splearn.domain.member.Member;
+import org.example.splearn.domain.member.MemberRegisterRequest;
+import org.example.splearn.domain.member.MemberStatus;
+import org.example.splearn.domain.member.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
