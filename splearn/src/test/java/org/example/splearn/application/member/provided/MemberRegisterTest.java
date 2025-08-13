@@ -43,15 +43,50 @@ public record MemberRegisterTest(MemberRegister memberRegister, EntityManager en
 
     @Test
     void activate() {
-        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
-        entityManager.flush();
-        entityManager.clear();
+        Member member = registerMember();
 
         Member activated = memberRegister.activate(member.getId());
         entityManager.flush();
+        entityManager.clear();
 
         assertThat(activated.getId()).isEqualTo(member.getId());
         assertThat(activated.getStatus()).isEqualTo(MemberStatus.ACTIVE);
+    }
+
+    private Member registerMember() {
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest());
+        entityManager.flush();
+        entityManager.clear();
+        return member;
+    }
+
+    @Test
+    void deactivate() {
+        Member member = registerMember();
+        memberRegister.activate(member.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        Member deactivated = memberRegister.deactivate(member.getId());
+        entityManager.flush();
+
+        assertThat(deactivated.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
+        assertThat(deactivated.getDetail().getDeactivatedAt()).isNotNull();
+    }
+
+    @Test
+    void updateInfo() {
+        Member member = registerMember();
+        Member activated = memberRegister.activate(member.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        MemberInfoUpdateRequest request = new MemberInfoUpdateRequest("newnickname", "newproifle", "newInformation");
+        Member updated = memberRegister.updateInfo(activated.getId(), request);
+
+        assertThat(updated.getNickname()).isEqualTo(request.nickname());
+        assertThat(updated.getDetail().getProfile().address()).isEqualTo("newproifle");
+        assertThat(updated.getDetail().getIntroduction()).isEqualTo("newInformation");
     }
 
 }

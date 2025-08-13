@@ -7,10 +7,7 @@ import org.example.splearn.application.member.provided.MemberFinder;
 import org.example.splearn.application.member.provided.MemberRegister;
 import org.example.splearn.application.member.required.EmailSender;
 import org.example.splearn.application.member.required.MemberRepository;
-import org.example.splearn.domain.member.DuplicateEmailException;
-import org.example.splearn.domain.member.Member;
-import org.example.splearn.domain.member.MemberRegisterRequest;
-import org.example.splearn.domain.member.PasswordEncoder;
+import org.example.splearn.domain.member.*;
 import org.example.splearn.domain.shared.Email;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +36,19 @@ public class MemberModifyService implements MemberRegister {
     public Member activate(Long memberId) {
         Member member = memberFinder.find(memberId);
         member.activate();
+        return memberRepository.save(member);
+    }
+
+    @Override
+    public Member deactivate(Long memberId) {
+        Member member = memberFinder.find(memberId);
+        member.deactivate();
+        return memberRepository.save(member);    }
+
+    @Override
+    public Member updateInfo(Long memberId, @Valid MemberInfoUpdateRequest request) {
+        Member member = memberFinder.find(memberId);
+        member.updateInfo(request);
         return memberRepository.save(member);
     }
 

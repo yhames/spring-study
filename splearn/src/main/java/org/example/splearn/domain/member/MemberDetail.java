@@ -11,13 +11,15 @@ import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 
+import static java.util.Objects.requireNonNull;
+
 @Entity
 @Getter
 @ToString(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberDetail extends AbstractEntity {
 
-    private String profile;
+    private Profile profile;
 
     private String introduction;
 
@@ -42,6 +44,11 @@ public class MemberDetail extends AbstractEntity {
     void deactivate() {
         Assert.isTrue(deactivatedAt == null, "Member is already deactivated");
         this.deactivatedAt = LocalDateTime.now();
+    }
+
+    void updateInfo(MemberInfoUpdateRequest updateRequest) {
+        this.profile = new Profile(updateRequest.profileAddress());
+        this.introduction = requireNonNull(updateRequest.introduction());
     }
 
 }
