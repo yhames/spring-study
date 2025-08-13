@@ -9,14 +9,12 @@ class ProfileTest {
 
     @Test
     void profile() {
-        Profile test = new Profile("test");
-        assertThat(test).isNotNull();
+        new Profile("test");
+        new Profile("");
     }
 
     @Test
     void profileFail() {
-        assertThatThrownBy(() -> new Profile(""))
-                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new Profile("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new Profile("A"))

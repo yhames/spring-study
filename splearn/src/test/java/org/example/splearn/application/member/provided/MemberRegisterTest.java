@@ -60,6 +60,13 @@ public record MemberRegisterTest(MemberRegister memberRegister, EntityManager en
         return member;
     }
 
+    private Member registerMember(String email) {
+        Member member = memberRegister.register(MemberFixture.createMemberRegisterRequest(email));
+        entityManager.flush();
+        entityManager.clear();
+        return member;
+    }
+
     @Test
     void deactivate() {
         Member member = registerMember();
@@ -87,6 +94,31 @@ public record MemberRegisterTest(MemberRegister memberRegister, EntityManager en
         assertThat(updated.getNickname()).isEqualTo(request.nickname());
         assertThat(updated.getDetail().getProfile().address()).isEqualTo("newproifle");
         assertThat(updated.getDetail().getIntroduction()).isEqualTo("newInformation");
+    }
+
+    @Test
+    void updateInfoFail() {
+        Member member = registerMember();
+        memberRegister.activate(member.getId());
+        MemberInfoUpdateRequest request = new MemberInfoUpdateRequest("newnickname", "newproifle", "newInformation");
+        memberRegister.updateInfo(member.getId(), request);
+        Member member2 = registerMember("test2@example.com");
+        memberRegister.activate(member2.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        // 프로필 주소 중복 예외
+        MemberInfoUpdateRequest request2 = new MemberInfoUpdateRequest("newnickname2", request.profileAddress(), "newInformation2");
+        assertThatThrownBy(() -> memberRegister.updateInfo(member2.getId(), request2))
+                .isInstanceOf(DuplicateProfileException.class);
+
+        // 프로필 주소 변경 가능
+        MemberInfoUpdateRequest request3 = new MemberInfoUpdateRequest("newnickname3", "newproifle3", "newInformation3");
+        memberRegister.updateInfo(member2.getId(), request3);
+
+        // 프로필 주소 제거 가능
+        MemberInfoUpdateRequest request4 = new MemberInfoUpdateRequest("newnickname3", "", "newInformation3");
+        memberRegister.updateInfo(member2.getId(), request4);
     }
 
 }

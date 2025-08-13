@@ -58,14 +58,8 @@ public class Member extends AbstractEntity {
         return passwordEncoder.matches(secret, this.passwordHash);
     }
 
-    public void changeNickname(String nickname) {
-        Assert.hasText(nickname, "Nickname must not be empty");
-        Assert.state(status == MemberStatus.ACTIVE, "Member must be ACTIVE to change nickname");
-
-        this.nickname = requireNonNull(nickname);
-    }
-
     public void updateInfo(MemberInfoUpdateRequest updateRequest) {
+        Assert.state(status == MemberStatus.ACTIVE, "Member must be ACTIVE to update info");
         this.nickname = requireNonNull(updateRequest.nickname());
         this.detail.updateInfo(updateRequest);
     }

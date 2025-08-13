@@ -12,6 +12,8 @@ import org.example.splearn.domain.shared.Email;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.Objects;
+
 @Service
 @Validated
 @Transactional
@@ -43,11 +45,13 @@ public class MemberModifyService implements MemberRegister {
     public Member deactivate(Long memberId) {
         Member member = memberFinder.find(memberId);
         member.deactivate();
-        return memberRepository.save(member);    }
+        return memberRepository.save(member);
+    }
 
     @Override
     public Member updateInfo(Long memberId, @Valid MemberInfoUpdateRequest request) {
         Member member = memberFinder.find(memberId);
+        checkDuplicateProfile(member, request.profileAddress());
         member.updateInfo(request);
         return memberRepository.save(member);
     }
@@ -59,6 +63,19 @@ public class MemberModifyService implements MemberRegister {
     private void checkDuplicateEmail(MemberRegisterRequest request) {
         if (memberRepository.findByEmail(new Email(request.email())).isPresent()) {
             throw new DuplicateEmailException("이미 사용 중인 이메일입니다: " + request.email());
+        }
+    }
+
+    private void checkDuplicateProfile(Member member, String profileAddress) {
+        if (profileAddress.isEmpty()) {
+            return;
+        }
+        Profile currentProfile = member.getDetail().getProfile();
+        if (Objects.nonNull(currentProfile) && currentProfile.address().equals(profileAddress)) {
+            return;
+        }
+        if (memberRepository.findByProfile(new Profile(profileAddress)).isPresent()) {
+            throw new DuplicateProfileException("이미 사용 중인 프로필 주소입니다: " + profileAddress);
         }
     }
 
