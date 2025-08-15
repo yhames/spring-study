@@ -9,6 +9,7 @@ import org.example.splearn.domain.member.MemberFixture;
 import org.example.splearn.domain.member.MemberRegisterRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
@@ -45,4 +46,14 @@ class MemberApiTest {
         verify(memberRegister).register(request);
     }
 
+    @Test
+    void registerFail() throws JsonProcessingException {
+        MemberRegisterRequest request = MemberFixture.createMemberRegisterRequest("invalid-email");
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        assertThat(mvcTester.post().uri("/api/members")
+                .contentType("application/json")
+                .content(requestJson))
+                .hasStatus(HttpStatus.BAD_REQUEST);
+    }
 }
