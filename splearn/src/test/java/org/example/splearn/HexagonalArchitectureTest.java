@@ -7,7 +7,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.library.Architectures;
 
 @AnalyzeClasses(packages = "org.example.splearn", importOptions = ImportOption.DoNotIncludeTests.class)
-public class HexagonalArchitectureTest {
+class HexagonalArchitectureTest {
 
     @ArchTest
     void hexagonalArchitectureTest(JavaClasses classes) {

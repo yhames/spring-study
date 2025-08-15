@@ -8,7 +8,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @AnalyzeClasses(packages = "org.example.learningtest.archunit")
-public class ArchUnitLearningTest {
+class ArchUnitLearningTest {
 
     @ArchTest
     void application(JavaClasses classes) {
